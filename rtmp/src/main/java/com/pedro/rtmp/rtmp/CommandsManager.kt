@@ -3,6 +3,7 @@ package com.pedro.rtmp.rtmp
 import android.util.Log
 import com.pedro.rtmp.amf.v0.*
 import com.pedro.rtmp.flv.FlvPacket
+import com.pedro.rtmp.flv.FlvType
 import com.pedro.rtmp.rtmp.chunk.ChunkStreamId
 import com.pedro.rtmp.rtmp.chunk.ChunkType
 import com.pedro.rtmp.rtmp.message.*
@@ -157,6 +158,21 @@ class CommandsManager {
     metadata.writeBody(output)
     output.flush()
     Log.i(TAG, "send $metadata")
+  }
+
+  fun sendSignature(signature: ByteArray, signatureType: FlvType, output: OutputStream): Int {
+    val name = "@setDataFrame"
+    val signatureMessage = DataAmf0(name, getCurrentTimestamp(), streamId)
+    signatureMessage.addData(AmfString("$signatureType Signature"))
+    val amfEcmaArray = AmfEcmaArray()
+    amfEcmaArray.setProperty("signature", signature.toString())
+    signatureMessage.addData(amfEcmaArray)
+
+    signatureMessage.writeHeader(output)
+    signatureMessage.writeBody(output)
+    output.flush()
+    Log.i(TAG, "send signature $signatureMessage")
+    return signatureMessage.header.getPacketLength()
   }
 
   @Throws(IOException::class)

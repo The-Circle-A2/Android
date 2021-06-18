@@ -15,10 +15,12 @@ import com.pedro.rtmp.utils.BitrateManager
 import com.pedro.rtmp.utils.ConnectCheckerRtmp
 import java.io.OutputStream
 import java.nio.ByteBuffer
+import java.security.*
+import java.security.spec.PKCS8EncodedKeySpec
+import java.security.spec.X509EncodedKeySpec
 import java.util.*
-import java.util.concurrent.BlockingQueue
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
+import kotlin.collections.ArrayList
 
 /**
  * Created by pedro on 8/04/21.
@@ -31,7 +33,13 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     @Volatile
     private var flvPacketBlockingQueue: BlockingQueue<FlvPacket> = LinkedBlockingQueue(60)
-    private var thread: HandlerThread? = null
+    @Volatile
+    private var videoSignatureBlockingDeque: BlockingDeque<ByteArray> = LinkedBlockingDeque(60);
+    @Volatile
+    private var audioSignatureBlockingDeque: BlockingDeque<ByteArray> = LinkedBlockingDeque(60);
+    private val signatureSize: Int = 5
+    private var streamThread: HandlerThread? = null
+    private var signatureThread: HandlerThread? = null
     private var audioFramesSent: Long = 0
     private var videoFramesSent: Long = 0
     var output: OutputStream? = null
@@ -69,6 +77,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     override fun onVideoFrameCreated(flvPacket: FlvPacket) {
       try {
         flvPacketBlockingQueue.add(flvPacket)
+        videoSignatureBlockingDeque.addLast(flvPacket.buffer)
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Video frame discarded")
         droppedVideoFrames++
@@ -78,6 +87,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     override fun onAudioFrameCreated(flvPacket: FlvPacket) {
       try {
         flvPacketBlockingQueue.add(flvPacket)
+        audioSignatureBlockingDeque.addLast(flvPacket.buffer)
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Audio frame discarded")
         droppedAudioFrames++
@@ -85,9 +95,9 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     }
 
     fun start() {
-      thread = HandlerThread(TAG)
-      thread?.start()
-      thread?.let {
+      streamThread = HandlerThread("$TAG StreamingThread")
+      streamThread?.start()
+      streamThread?.let {
         val h = Handler(it.looper)
         running = true
         h.post {
@@ -129,18 +139,55 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
           }
         }
       }
+
+      signatureThread = HandlerThread("$TAG SignatureThread")
+      signatureThread?.start()
+      signatureThread?.let {
+          val h = Handler(it.looper)
+          h.post {
+              while (!Thread.interrupted()) {
+                  try {
+                      //Check for both video and audio
+                      checkAndMakeSignature(videoSignatureBlockingDeque, FlvType.VIDEO)
+                      checkAndMakeSignature(audioSignatureBlockingDeque, FlvType.AUDIO)
+
+                      //Check if there are enough audio packets for a signature
+                  } catch (e: Exception) {
+                      //InterruptedException is only when you disconnect manually, you don't need report it.
+                      if (e !is InterruptedException) {
+                          connectCheckerRtmp.onConnectionFailedRtmp("Error signing packets, ${e.message}")
+                          Log.e(TAG, "send error: ", e)
+                      }
+                  }
+              }
+          }
+      }
     }
 
     fun stop(clear: Boolean = true) {
       running = false
-      thread?.looper?.thread?.interrupt()
-      thread?.looper?.quit()
-      thread?.quit()
+
+      //Stop the stream thread
+      streamThread?.looper?.thread?.interrupt()
+      streamThread?.looper?.quit()
+      streamThread?.quit()
       try {
-        thread?.join(100)
+        streamThread?.join(100)
       } catch (e: Exception) { }
-      thread = null
+      streamThread = null
+
+      //Stop the signature thread
+      signatureThread?.looper?.thread?.interrupt()
+      signatureThread?.looper?.quit()
+      signatureThread?.quit()
+      try {
+        signatureThread?.join(100)
+      } catch (e: Exception) { }
+      signatureThread = null
+
       flvPacketBlockingQueue.clear()
+      videoSignatureBlockingDeque.clear()
+      audioSignatureBlockingDeque.clear()
       aacPacket.reset()
       h264Packet.reset(clear)
       resetSentAudioFrames()
@@ -195,5 +242,94 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     fun setLogs(enable: Boolean) {
       isEnableLogs = enable
+    }
+
+    // Function for checking if there are enough frames to make a signature
+    // Makes a signature and puts it in a data message if possible
+    private fun checkAndMakeSignature(signatureBlockingDeque: BlockingDeque<ByteArray>, flvType: FlvType) {
+        if (signatureBlockingDeque.size >= signatureSize) {
+            val byteArrayList: MutableList<ByteArray> = ArrayList(signatureSize)
+            signatureBlockingDeque.drainTo(byteArrayList, signatureSize)
+
+            try {
+                // If there somehow are not exactly 5 frames, put all of them back in the que (in the right order) and try again next loop
+                if (byteArrayList.size != signatureSize) {
+                    throw Exception()
+                }
+
+
+                // Concatenate all ByteArrays into one single instance
+                val byteArray: ByteArray = byteArrayListToByteArray(byteArrayList)
+
+                val signature = signByteArray(byteArray)
+                Log.e("$TAG Signature", "Signature: $signature")
+
+//                val result = verifyByteArray(byteArray, signature)
+//                Log.e("$TAG Signature", "Verify: $result")
+
+                var size = 0
+                output?.let { output ->
+                    size = commandsManager.sendSignature(signature, flvType, output)
+                }
+                bitrateManager.calculateBitrate(size * 8L)
+
+                Log.e("$TAG Signature", "Signature: $signature")
+            } catch (e: Exception) {
+                Log.e(TAG, e.toString())
+
+                byteArrayList.reverse()
+                byteArrayList.forEach { signatureBlockingDeque.addFirst(it) }
+            }
+        }
+    }
+
+    private fun byteArrayListToByteArray(byteArrayList: MutableList<ByteArray>): ByteArray {
+        val byteArray: ByteArray = byteArrayList.removeFirst()
+        byteArrayList.forEach { byteArray.plus(it) }
+        return byteArray;
+    }
+
+    private val PRIVATE_KEY: String = "MIICWgIBAAKBgHcyTFikOhMTDuiisl6kwRpSBmrEstw1+gYboOQtugugpYVHcSwI" +
+            "UM9lFfiGN5zn6++bU8DDQScnIU4D7Zg6S3/h1dyqyHjIzSD9fvCcbaJlFC32mrNO" +
+            "SPhbF+irpHaIbS4e2V8qd6RdWerqJaXM7OsFEKydGzDW7G8lr5jIrAddAgMBAAEC" +
+            "gYADPqNFZnMOQd6OBp/EY8e95621ClW0GOQNdoMSswv1dRIMZr117WQFwUKv2Td6" +
+            "VfXeN+Q3wxjq7+3AKes10aBseQmXB68iJ7e78LjsaU4f02j5WQOPTQRy2f4H/Cgm" +
+            "dZplSuyuWUQUL0UM2CH4bhXPKLDXkfPhuLwPxl7tD83SAQJBANcqZg6rQAM22DVI" +
+            "AW0kUJjUDCrHq0m8sIR2dSEfqoxVegDSdXZ5/hdgkS5Ly61p4BwfQ1fbrajkjFZi" +
+            "oZQXftECQQCN0VZIkzMyX83h65QsoGdjq1wO2d/BbU3NUfTy9zg3qjrQ1DgPeyU4" +
+            "BWNSaB7+eRsyaelxhij5iq7NMOvoZlrNAkBi/hbGWPOyhuEiYmaFmFeceLLAW+zq" +
+            "l+1+hCGPg8orlofzKODyCV5l0v/4lNa4iiWZyqhpG6DiO4R1mhtMzyKBAkAWk4m5" +
+            "2f0fetLqsTcQd6Sd4EyybIrLXxwwoGhvOV3wtp/QWMhn5oHBTlJGbx7oAd2LhALO" +
+            "uL3TI/m53pzfjVPNAkBZfx4rEHrucEcfgoQjU5PDUDkATBHLa7juPc4hEzViHcRi" +
+            "1oz0hdGXB1kSldcK9ejqbMuNvm905jFkaauqYwv+"
+    private val PUBLIC_KEY: String = "MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgHcyTFikOhMTDuiisl6kwRpSBmrE" +
+            "stw1+gYboOQtugugpYVHcSwIUM9lFfiGN5zn6++bU8DDQScnIU4D7Zg6S3/h1dyq" +
+            "yHjIzSD9fvCcbaJlFC32mrNOSPhbF+irpHaIbS4e2V8qd6RdWerqJaXM7OsFEKyd" +
+            "GzDW7G8lr5jIrAddAgMBAAE="
+
+    private fun signByteArray(data: ByteArray): ByteArray {
+        val privateKeyBytes = Base64.getDecoder().decode(PRIVATE_KEY)
+        val privateKeySpec = PKCS8EncodedKeySpec(privateKeyBytes)
+        val keyFactory = KeyFactory.getInstance("RSA")
+        val privateKey: PrivateKey = keyFactory.generatePrivate(privateKeySpec)
+
+        val signature = Signature.getInstance("SHA256withRSA")
+        signature.initSign(privateKey)
+        signature.update(data)
+
+        return signature.sign()
+    }
+
+    private fun verifyByteArray(data: ByteArray, signatureByteArray: ByteArray): Boolean {
+        val publicKeyBytes = Base64.getDecoder().decode(PUBLIC_KEY)
+        val publicKeySpec = X509EncodedKeySpec(publicKeyBytes)
+        val keyFactory = KeyFactory.getInstance("RSA")
+        val publicKey: PublicKey = keyFactory.generatePublic(publicKeySpec)
+
+        val signature = Signature.getInstance("SHA256withRSA")
+        signature.initVerify(publicKey)
+        signature.update(data)
+
+        return signature.verify(signatureByteArray)
     }
 }

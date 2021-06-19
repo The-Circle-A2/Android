@@ -161,7 +161,7 @@ class CommandsManager {
   }
 
   fun sendSignature(signature: ByteArray, signatureType: FlvType, output: OutputStream): Int {
-    val name = "@setDataFrame"
+    val name = "@setSignature"
     val signatureMessage = DataAmf0(name, getCurrentTimestamp(), streamId)
     signatureMessage.addData(AmfString("$signatureType Signature"))
     val amfEcmaArray = AmfEcmaArray()

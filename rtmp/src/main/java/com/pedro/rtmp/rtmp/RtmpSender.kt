@@ -52,6 +52,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     companion object {
       private const val TAG = "RtmpSender"
+      private const val SIG_TAG = "$TAG Signature"
     }
 
     fun setVideoInfo(sps: ByteBuffer, pps: ByteBuffer, vps: ByteBuffer?) {
@@ -244,12 +245,15 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
       isEnableLogs = enable
     }
 
+    private val signatureList: MutableList<ByteArray> = LinkedList()
+
     // Function for checking if there are enough frames to make a signature
     // Makes a signature and puts it in a data message if possible
     private fun checkAndMakeSignature(signatureBlockingDeque: BlockingDeque<ByteArray>, flvType: FlvType) {
         if (signatureBlockingDeque.size >= signatureSize) {
             val byteArrayList: MutableList<ByteArray> = ArrayList(signatureSize)
             signatureBlockingDeque.drainTo(byteArrayList, signatureSize)
+            Log.e(SIG_TAG, "Byte List Size: ${byteArrayList.map { byteArray -> byteArray.count() }.sum()}")
 
             try {
                 // If there somehow are not exactly 5 frames, put all of them back in the que (in the right order) and try again next loop
@@ -260,20 +264,20 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
                 // Concatenate all ByteArrays into one single instance
                 val byteArray: ByteArray = byteArrayListToByteArray(byteArrayList)
+                Log.e(SIG_TAG, "ByteArray Size: ${byteArray.count()}")
 
                 val signature = signByteArray(byteArray)
-                Log.e("$TAG Signature", "Signature: $signature")
+                Log.e(SIG_TAG, "Signature: ${signature}, of type: $flvType")
+                signatureList.add(signature)
 
 //                val result = verifyByteArray(byteArray, signature)
-//                Log.e("$TAG Signature", "Verify: $result")
+//                Log.e(SIG_TAG, "Verify: $result")
 
                 var size = 0
                 output?.let { output ->
-                    size = commandsManager.sendSignature(signature, flvType, output)
+//                    size = commandsManager.sendSignature(signature, flvType, output)
                 }
                 bitrateManager.calculateBitrate(size * 8L)
-
-                Log.e("$TAG Signature", "Signature: $signature")
             } catch (e: Exception) {
                 Log.e(TAG, e.toString())
 
@@ -284,9 +288,11 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     }
 
     private fun byteArrayListToByteArray(byteArrayList: MutableList<ByteArray>): ByteArray {
-        val byteArray: ByteArray = byteArrayList.removeFirst()
-        byteArrayList.forEach { byteArray.plus(it) }
-        return byteArray;
+        var byteArray: ByteArray = byteArrayList.removeFirst()
+        for (byteElement in byteArrayList) {
+            byteArray = byteArray.plus(byteElement)
+        }
+        return byteArray
     }
 
     private val PRIVATE_KEY: String = "MIICWgIBAAKBgHcyTFikOhMTDuiisl6kwRpSBmrEstw1+gYboOQtugugpYVHcSwI" +

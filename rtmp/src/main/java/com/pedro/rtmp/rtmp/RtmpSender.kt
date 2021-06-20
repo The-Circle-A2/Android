@@ -137,31 +137,22 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
               }
               return@post
             }
-          }
-        }
-      }
+              // Part of the loop that does the signatures
+              try {
+                  //Check for both video and audio
+                  checkAndMakeSignature(videoSignatureBlockingDeque, FlvType.VIDEO)
+                  checkAndMakeSignature(audioSignatureBlockingDeque, FlvType.AUDIO)
 
-      signatureThread = HandlerThread("$TAG SignatureThread")
-      signatureThread?.start()
-      signatureThread?.let {
-          val h = Handler(it.looper)
-          h.post {
-              while (!Thread.interrupted()) {
-                  try {
-                      //Check for both video and audio
-                      checkAndMakeSignature(videoSignatureBlockingDeque, FlvType.VIDEO)
-                      checkAndMakeSignature(audioSignatureBlockingDeque, FlvType.AUDIO)
-
-                      //Check if there are enough audio packets for a signature
-                  } catch (e: Exception) {
-                      //InterruptedException is only when you disconnect manually, you don't need report it.
-                      if (e !is InterruptedException) {
-                          connectCheckerRtmp.onConnectionFailedRtmp("Error signing packets, ${e.message}")
-                          Log.e(TAG, "send error: ", e)
-                      }
+                  //Check if there are enough audio packets for a signature
+              } catch (e: Exception) {
+                  //InterruptedException is only when you disconnect manually, you don't need report it.
+                  if (e !is InterruptedException) {
+                      connectCheckerRtmp.onConnectionFailedRtmp("Error signing packets, ${e.message}")
+                      Log.e(TAG, "send error: ", e)
                   }
               }
           }
+        }
       }
     }
 
@@ -247,6 +238,8 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     private val signatureList: MutableList<ByteArray> = LinkedList()
 
+    fun ByteArray.toHexString(): String = joinToString("") { java.lang.Byte.toUnsignedInt(it).toString(radix = 16).padStart(2, '0') }
+
     // Function for checking if there are enough frames to make a signature
     // Makes a signature and puts it in a data message if possible
     private fun checkAndMakeSignature(signatureBlockingDeque: BlockingDeque<ByteArray>, flvType: FlvType) {
@@ -264,10 +257,9 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
                 // Concatenate all ByteArrays into one single instance
                 val byteArray: ByteArray = byteArrayListToByteArray(byteArrayList)
-                Log.e(SIG_TAG, "ByteArray Size: ${byteArray.count()}")
 
                 val signature = signByteArray(byteArray)
-                Log.e(SIG_TAG, "Signature: ${signature}, of type: $flvType")
+                Log.e(SIG_TAG, "Signature: ${signature.toHexString()}")
                 signatureList.add(signature)
 
 //                val result = verifyByteArray(byteArray, signature)
@@ -275,7 +267,10 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
                 var size = 0
                 output?.let { output ->
-//                    size = commandsManager.sendSignature(signature, flvType, output)
+                    size = commandsManager.sendSignature(signature, flvType, output)
+                    if (isEnableLogs) {
+                        Log.i(SIG_TAG, "wrote $flvType signature packet, size $size")
+                    }
                 }
                 bitrateManager.calculateBitrate(size * 8L)
             } catch (e: Exception) {

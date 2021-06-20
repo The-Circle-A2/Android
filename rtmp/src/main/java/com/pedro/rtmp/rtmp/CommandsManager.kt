@@ -160,12 +160,14 @@ class CommandsManager {
     Log.i(TAG, "send $metadata")
   }
 
+  fun ByteArray.toHexString(): String = joinToString("") { java.lang.Byte.toUnsignedInt(it).toString(radix = 16).padStart(2, '0') }
+
   fun sendSignature(signature: ByteArray, signatureType: FlvType, output: OutputStream): Int {
     val name = "@setSignature"
     val signatureMessage = DataAmf0(name, getCurrentTimestamp(), streamId)
     signatureMessage.addData(AmfString("$signatureType Signature"))
     val amfEcmaArray = AmfEcmaArray()
-    amfEcmaArray.setProperty("signature", signature.toString())
+    amfEcmaArray.setProperty("signature", signature.toHexString())
     signatureMessage.addData(amfEcmaArray)
 
     signatureMessage.writeHeader(output)

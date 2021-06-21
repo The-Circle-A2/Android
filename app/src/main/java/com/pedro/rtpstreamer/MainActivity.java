@@ -51,18 +51,18 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_main);
-    overridePendingTransition(R.transition.slide_in, R.transition.slide_out);
-    TextView tvVersion = findViewById(R.id.tv_version);
-    tvVersion.setText(getString(R.string.version, BuildConfig.VERSION_NAME));
-
-    list = findViewById(R.id.list);
-    createList();
-    setListAdapter(activities);
-
-    if (!hasPermissions(this, PERMISSIONS)) {
-      ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
-    }
+    setContentView(R.layout.activity_start_stream);
+//    overridePendingTransition(R.transition.slide_in, R.transition.slide_out);
+//    TextView tvVersion = findViewById(R.id.tv_version);
+//    tvVersion.setText(getString(R.string.version, BuildConfig.VERSION_NAME));
+//
+//    list = findViewById(R.id.list);
+//    createList();
+//    setListAdapter(activities);
+//
+//    if (!hasPermissions(this, PERMISSIONS)) {
+//      ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
+//    }
   }
 
   private void createList() {

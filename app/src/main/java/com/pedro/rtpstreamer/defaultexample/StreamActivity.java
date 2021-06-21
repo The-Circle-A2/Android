@@ -1,12 +1,7 @@
 package com.pedro.rtpstreamer.defaultexample;
 
-import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -14,6 +9,9 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+
 import com.pedro.encoder.input.video.CameraOpenException;
 import com.pedro.rtmp.utils.ConnectCheckerRtmp;
 import com.pedro.rtplibrary.rtmp.RtmpCamera1;
@@ -31,7 +29,7 @@ import java.util.Locale;
  * {@link com.pedro.rtplibrary.base.Camera1Base}
  * {@link com.pedro.rtplibrary.rtmp.RtmpCamera1}
  */
-public class ExampleRtmpActivity extends AppCompatActivity
+public class StreamActivity extends AppCompatActivity
     implements ConnectCheckerRtmp, View.OnClickListener, SurfaceHolder.Callback {
 
   private RtmpCamera1 rtmpCamera1;
@@ -44,22 +42,18 @@ public class ExampleRtmpActivity extends AppCompatActivity
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
+    Toast.makeText(this, "Streaming...", Toast.LENGTH_LONG).show();
     super.onCreate(savedInstanceState);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-    setContentView(R.layout.activity_example);
+    setContentView(R.layout.activity_stream);
     folder = PathUtils.getRecordPath(this);
     SurfaceView surfaceView = findViewById(R.id.surfaceView);
     button = findViewById(R.id.b_start_stop);
     button.setOnClickListener(this);
-    bRecord = findViewById(R.id.b_record);
-    bRecord.setOnClickListener(this);
-    Button switchCamera = findViewById(R.id.switch_camera);
-    switchCamera.setOnClickListener(this);
-    etUrl = findViewById(R.id.et_rtp_url);
-    etUrl.setHint(R.string.hint_rtmp);
     rtmpCamera1 = new RtmpCamera1(surfaceView, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
+    Toast.makeText(this, "Klaar!", Toast.LENGTH_LONG).show();
   }
 
   @Override
@@ -71,7 +65,7 @@ public class ExampleRtmpActivity extends AppCompatActivity
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        Toast.makeText(ExampleRtmpActivity.this, "Connection success", Toast.LENGTH_SHORT).show();
+        Toast.makeText(StreamActivity.this, "Connection success", Toast.LENGTH_SHORT).show();
       }
     });
   }
@@ -82,10 +76,10 @@ public class ExampleRtmpActivity extends AppCompatActivity
       @Override
       public void run() {
         if (rtmpCamera1.reTry(5000, reason)) {
-          Toast.makeText(ExampleRtmpActivity.this, "Retry", Toast.LENGTH_SHORT)
+          Toast.makeText(StreamActivity.this, "Retry", Toast.LENGTH_SHORT)
               .show();
         } else {
-          Toast.makeText(ExampleRtmpActivity.this, "Connection failed. " + reason, Toast.LENGTH_SHORT)
+          Toast.makeText(StreamActivity.this, "Connection failed. " + reason, Toast.LENGTH_SHORT)
               .show();
           rtmpCamera1.stopStream();
           button.setText(R.string.start_button);
@@ -104,7 +98,7 @@ public class ExampleRtmpActivity extends AppCompatActivity
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        Toast.makeText(ExampleRtmpActivity.this, "Disconnected", Toast.LENGTH_SHORT).show();
+        Toast.makeText(StreamActivity.this, "Disconnected", Toast.LENGTH_SHORT).show();
       }
     });
   }
@@ -114,7 +108,7 @@ public class ExampleRtmpActivity extends AppCompatActivity
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        Toast.makeText(ExampleRtmpActivity.this, "Auth error", Toast.LENGTH_SHORT).show();
+        Toast.makeText(StreamActivity.this, "Auth error", Toast.LENGTH_SHORT).show();
       }
     });
   }
@@ -124,7 +118,7 @@ public class ExampleRtmpActivity extends AppCompatActivity
     runOnUiThread(new Runnable() {
       @Override
       public void run() {
-        Toast.makeText(ExampleRtmpActivity.this, "Auth success", Toast.LENGTH_SHORT).show();
+        Toast.makeText(StreamActivity.this, "Auth success", Toast.LENGTH_SHORT).show();
       }
     });
   }
@@ -137,10 +131,7 @@ public class ExampleRtmpActivity extends AppCompatActivity
           if (rtmpCamera1.isRecording()
               || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
             button.setText(R.string.stop_button);
-
-            rtmpCamera1.stopPreview();
-            startActivity(new Intent(this, StreamActivity.class));
-            //rtmpCamera1.startStream(etUrl.getText().toString());
+            rtmpCamera1.startStream(etUrl.getText().toString());
           } else {
             Toast.makeText(this, "Error preparing stream, This device cant do it",
                 Toast.LENGTH_SHORT).show();

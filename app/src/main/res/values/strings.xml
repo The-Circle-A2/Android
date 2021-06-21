@@ -2,6 +2,7 @@
   <string name="app_name">RTMP-RTSP Streamer</string>
   <string name="version">Version: %1$s</string>
 
+  <string name="stream">Stream</string>
   <string name="rtsp_streamer">Custom RTSP</string>
   <string name="rtmp_streamer">Custom RTMP</string>
   <string name="default_rtmp">Default RTMP</string>
@@ -28,6 +29,11 @@
   <string name="start_record">Start record</string>
   <string name="stop_record">Stop record</string>
   <string name="resync_file">ReSync file</string>
+
+  <string name="live">Live</string>
+  <string name="stop_stream">Stop stream</string>
+  <string name="comment_placeholder">Comment</string>
+
   <!--menu-->
   <string name="microphone">Microphone</string>
   <string name="filters">Filters</string>

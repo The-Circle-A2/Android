@@ -19,6 +19,7 @@ import com.pedro.rtpstreamer.customexample.RtmpActivity;
 import com.pedro.rtpstreamer.customexample.RtspActivity;
 import com.pedro.rtpstreamer.defaultexample.ExampleRtmpActivity;
 import com.pedro.rtpstreamer.defaultexample.ExampleRtspActivity;
+import com.pedro.rtpstreamer.defaultexample.StreamActivity;
 import com.pedro.rtpstreamer.displayexample.DisplayActivity;
 import com.pedro.rtpstreamer.filestreamexample.RtmpFromFileActivity;
 import com.pedro.rtpstreamer.filestreamexample.RtspFromFileActivity;
@@ -51,24 +52,24 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_start_stream);
-//    overridePendingTransition(R.transition.slide_in, R.transition.slide_out);
-//    TextView tvVersion = findViewById(R.id.tv_version);
-//    tvVersion.setText(getString(R.string.version, BuildConfig.VERSION_NAME));
-//
-//    list = findViewById(R.id.list);
-//    createList();
-//    setListAdapter(activities);
-//
-//    if (!hasPermissions(this, PERMISSIONS)) {
-//      ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
-//    }
+    setContentView(R.layout.activity_main);
+    overridePendingTransition(R.transition.slide_in, R.transition.slide_out);
+    TextView tvVersion = findViewById(R.id.tv_version);
+    tvVersion.setText(getString(R.string.version, BuildConfig.VERSION_NAME));
+
+    list = findViewById(R.id.list);
+    createList();
+    setListAdapter(activities);
+
+    if (!hasPermissions(this, PERMISSIONS)) {
+      ActivityCompat.requestPermissions(this, PERMISSIONS, 1);
+    }
   }
 
   private void createList() {
     activities = new ArrayList<>();
     activities.add(
-        new ActivityLink(new Intent(this, RtmpActivity.class), getString(R.string.rtmp_streamer),
+        new ActivityLink(new Intent(this, StreamActivity.class), getString(R.string.rtmp_streamer),
             JELLY_BEAN));
     activities.add(
         new ActivityLink(new Intent(this, RtspActivity.class), getString(R.string.rtsp_streamer),

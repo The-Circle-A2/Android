@@ -236,12 +236,12 @@
     </LinearLayout>
 
     <ImageButton
-        android:id="@+id/imageButtonSwitch"
+        android:id="@+id/switch_camera"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:background="@color/white"
-        android:onClick="@string/switch_camera_button"
+        android:onClick="onClick"
         app:srcCompat="@android:drawable/ic_menu_rotate" />
 
   </LinearLayout>

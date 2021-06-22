@@ -19,6 +19,7 @@ import com.pedro.rtpstreamer.customexample.RtmpActivity;
 import com.pedro.rtpstreamer.customexample.RtspActivity;
 import com.pedro.rtpstreamer.defaultexample.ExampleRtmpActivity;
 import com.pedro.rtpstreamer.defaultexample.ExampleRtspActivity;
+import com.pedro.rtpstreamer.defaultexample.FormActivity;
 import com.pedro.rtpstreamer.defaultexample.StreamActivity;
 import com.pedro.rtpstreamer.displayexample.DisplayActivity;
 import com.pedro.rtpstreamer.filestreamexample.RtmpFromFileActivity;
@@ -52,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
-    setContentView(R.layout.activity_form);
+    startActivity(new Intent(this, FormActivity.class));
     overridePendingTransition(R.transition.slide_in, R.transition.slide_out);
 //    TextView tvVersion = findViewById(R.id.tv_version);
 //    tvVersion.setText(getString(R.string.version, BuildConfig.VERSION_NAME));

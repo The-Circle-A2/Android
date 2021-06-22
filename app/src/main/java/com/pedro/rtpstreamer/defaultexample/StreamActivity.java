@@ -1,5 +1,6 @@
 package com.pedro.rtpstreamer.defaultexample;
 
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.SurfaceHolder;
@@ -33,9 +34,7 @@ public class StreamActivity extends AppCompatActivity
     implements ConnectCheckerRtmp, View.OnClickListener, SurfaceHolder.Callback {
 
   private RtmpCamera1 rtmpCamera1;
-  private Button button;
-  private Button bRecord;
-  private EditText etUrl;
+  private Button stopStream;
 
   private String currentDateAndTime = "";
   private File folder;
@@ -48,11 +47,28 @@ public class StreamActivity extends AppCompatActivity
     setContentView(R.layout.activity_stream);
     folder = PathUtils.getRecordPath(this);
     SurfaceView surfaceView = findViewById(R.id.surfaceView);
-    button = findViewById(R.id.b_start_stop);
-    button.setOnClickListener(this);
+    stopStream = findViewById(R.id.b_start_stop);
+    stopStream.setOnClickListener(this);
     rtmpCamera1 = new RtmpCamera1(surfaceView, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
+    try {
+      if (!rtmpCamera1.isStreaming()) {
+        if (rtmpCamera1.isRecording()
+                || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
+          rtmpCamera1.stopPreview();
+          rtmpCamera1.startStream("rtmp://145.49.29.107:1935/live/69");
+        } else {
+          Toast.makeText(this, "Error preparing stream, This device cant do it",
+                  Toast.LENGTH_SHORT).show();
+        }
+      } else {
+        stopStream.setText(R.string.start_button);
+        rtmpCamera1.stopStream();
+      }
+    } catch (CameraOpenException e) {
+      Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+    }
     Toast.makeText(this, "Klaar!", Toast.LENGTH_LONG).show();
   }
 
@@ -82,7 +98,7 @@ public class StreamActivity extends AppCompatActivity
           Toast.makeText(StreamActivity.this, "Connection failed. " + reason, Toast.LENGTH_SHORT)
               .show();
           rtmpCamera1.stopStream();
-          button.setText(R.string.start_button);
+          stopStream.setText(R.string.start_button);
         }
       }
     });
@@ -127,19 +143,7 @@ public class StreamActivity extends AppCompatActivity
   public void onClick(View view) {
     switch (view.getId()) {
       case R.id.b_start_stop:
-        if (!rtmpCamera1.isStreaming()) {
-          if (rtmpCamera1.isRecording()
-              || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
-            button.setText(R.string.stop_button);
-            rtmpCamera1.startStream(etUrl.getText().toString());
-          } else {
-            Toast.makeText(this, "Error preparing stream, This device cant do it",
-                Toast.LENGTH_SHORT).show();
-          }
-        } else {
-          button.setText(R.string.start_button);
-          rtmpCamera1.stopStream();
-        }
+        startActivity(new Intent(this, StartStreamActivity.class));
         break;
       case R.id.switch_camera:
         try {
@@ -161,7 +165,6 @@ public class StreamActivity extends AppCompatActivity
                 if (rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
                   rtmpCamera1.startRecord(
                       folder.getAbsolutePath() + "/" + currentDateAndTime + ".mp4");
-                  bRecord.setText(R.string.stop_record);
                   Toast.makeText(this, "Recording... ", Toast.LENGTH_SHORT).show();
                 } else {
                   Toast.makeText(this, "Error preparing stream, This device cant do it",
@@ -170,17 +173,14 @@ public class StreamActivity extends AppCompatActivity
               } else {
                 rtmpCamera1.startRecord(
                     folder.getAbsolutePath() + "/" + currentDateAndTime + ".mp4");
-                bRecord.setText(R.string.stop_record);
                 Toast.makeText(this, "Recording... ", Toast.LENGTH_SHORT).show();
               }
             } catch (IOException e) {
               rtmpCamera1.stopRecord();
-              bRecord.setText(R.string.start_record);
               Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
             }
           } else {
             rtmpCamera1.stopRecord();
-            bRecord.setText(R.string.start_record);
             Toast.makeText(this,
                 "file " + currentDateAndTime + ".mp4 saved in " + folder.getAbsolutePath(),
                 Toast.LENGTH_SHORT).show();
@@ -210,7 +210,6 @@ public class StreamActivity extends AppCompatActivity
   public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2 && rtmpCamera1.isRecording()) {
       rtmpCamera1.stopRecord();
-      bRecord.setText(R.string.start_record);
       Toast.makeText(this,
           "file " + currentDateAndTime + ".mp4 saved in " + folder.getAbsolutePath(),
           Toast.LENGTH_SHORT).show();
@@ -218,7 +217,6 @@ public class StreamActivity extends AppCompatActivity
     }
     if (rtmpCamera1.isStreaming()) {
       rtmpCamera1.stopStream();
-      button.setText(getResources().getString(R.string.start_button));
     }
     rtmpCamera1.stopPreview();
   }

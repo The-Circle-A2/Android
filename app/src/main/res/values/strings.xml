@@ -36,6 +36,8 @@
   <string name="stream_uri_input_title">Stream Uri:</string>
   <string name="user_name_input_title">Username:</string>
   <string name="submit_form">Submit</string>
+  <string name="form_activity">Form Activity</string>
+  <string name="start_stream_activity">Start stream Activity</string>
 
   <string name="live">Live</string>
   <string name="stop_stream">Stop stream</string>

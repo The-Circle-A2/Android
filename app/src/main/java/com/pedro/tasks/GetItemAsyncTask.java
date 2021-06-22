@@ -35,7 +35,15 @@ public class GetItemAsyncTask extends AsyncTask<Void, Void, ArrayList<Message>> 
             e.printStackTrace();
         }
 
-        try {
+        Message testMessage = new Message(0, "Jefke", "Cool berichtje", new Date(), "pfp.png");
+        messages.add(testMessage);
+        testMessage = new Message(0, "Kees", "Niet echt", new Date(), "pfp.png");
+        messages.add(testMessage);
+        testMessage = new Message(0, "Jefke", "Ja da wit ik wel", new Date(), "pfp.png");
+        messages.add(testMessage);
+        return messages;
+
+        /*try {
             if(response != null) {
                 JSONObject json = new JSONObject(response);
                 array = json.getJSONArray("messages");
@@ -88,6 +96,6 @@ public class GetItemAsyncTask extends AsyncTask<Void, Void, ArrayList<Message>> 
             e.printStackTrace();
             return messages;
         }
-        return messages;
+        return messages;*/
     }
 }

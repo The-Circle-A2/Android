@@ -3,6 +3,7 @@ package com.pedro.rtpstreamer.defaultexample;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -12,19 +13,26 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
+import com.pedro.MainRecycleViewAdapter;
 import com.pedro.encoder.input.video.CameraOpenException;
+import com.pedro.model.Message;
 import com.pedro.rtmp.utils.ConnectCheckerRtmp;
 import com.pedro.rtplibrary.rtmp.RtmpCamera1;
 import com.pedro.rtpstreamer.MainActivity;
 import com.pedro.rtpstreamer.R;
 import com.pedro.rtpstreamer.utils.PathUtils;
+import com.pedro.tasks.GetItemAsyncTask;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.ExecutionException;
 
 /**
  * More documentation see:
@@ -36,7 +44,9 @@ public class StreamActivity extends AppCompatActivity
 
   private RtmpCamera1 rtmpCamera1;
   private Button stopStream;
-
+  private RecyclerView mRecyclerView;
+  private RecyclerView.Adapter mAdapter;
+  private RecyclerView.LayoutManager mLayoutManager;
   private String currentDateAndTime = "";
   private File folder;
 
@@ -52,6 +62,26 @@ public class StreamActivity extends AppCompatActivity
     rtmpCamera1 = new RtmpCamera1(surfaceView, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
+    rtmpCamera1.startPreview();
+
+    //obtain a handle to the object
+    mRecyclerView = findViewById(R.id.recycler_view_activity_list);
+    // use a linear layout manager
+    mLayoutManager = new LinearLayoutManager(this);
+    //connect it to a layout manager
+    mRecyclerView.setLayoutManager(mLayoutManager);
+
+    //Init features array
+    ArrayList<Message> mMessages = getMessages();
+
+    if(savedInstanceState == null) {
+      //Show toast
+      Toast.makeText(this, "Aantal opgehaalde items: " + mMessages.size(), Toast.LENGTH_LONG).show();
+    }
+
+    // specify an adapter
+    setAdapter(mMessages);
+
     try {
       if (!rtmpCamera1.isStreaming()) {
         if (rtmpCamera1.isRecording()
@@ -69,6 +99,26 @@ public class StreamActivity extends AppCompatActivity
     } catch (CameraOpenException e) {
       Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
     }
+  }
+
+  private void setAdapter(ArrayList<Message> mMessages){
+    mAdapter = new MainRecycleViewAdapter(mMessages);
+    mRecyclerView.setAdapter(mAdapter);
+
+    Log.d(StreamActivity.class.getSimpleName(), "Adapter has been set.");
+  }
+
+  private ArrayList<Message> getMessages(){
+    ArrayList<Message> messages = new ArrayList<>();
+
+    try {
+      messages = new GetItemAsyncTask().execute().get();
+    } catch (ExecutionException | InterruptedException e) {
+      e.printStackTrace();
+    }
+
+    Log.d(MainActivity.class.getSimpleName(), "Messages has been retrieved.");
+    return messages;
   }
 
   @Override
@@ -145,7 +195,7 @@ public class StreamActivity extends AppCompatActivity
         if (!rtmpCamera1.isStreaming()) {
           if (rtmpCamera1.isRecording()
               || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
-            //button.setText(R.string.stop_button);
+            stopStream.setText(R.string.stop_button);
             rtmpCamera1.stopStream();
             rtmpCamera1.stopPreview();
             startActivity(new Intent(this, MainActivity.class));
@@ -154,7 +204,7 @@ public class StreamActivity extends AppCompatActivity
                 Toast.LENGTH_SHORT).show();
           }
         } else {
-          //button.setText(R.string.start_button);
+          stopStream.setText(R.string.start_button);
           rtmpCamera1.stopStream();
         }
         startActivity(new Intent(this, StartStreamActivity.class));

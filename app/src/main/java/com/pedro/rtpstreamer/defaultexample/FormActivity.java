@@ -40,7 +40,7 @@ public class FormActivity extends AppCompatActivity
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.submit_form:
-                startActivity(new Intent(this, StartStreamActivity.class));
+                startActivity(new Intent(this, StreamActivity.class));
                 break;
             default:
                 break;

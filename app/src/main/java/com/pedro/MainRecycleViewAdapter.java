@@ -6,6 +6,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
@@ -21,6 +22,10 @@ import java.util.ArrayList;
 public class MainRecycleViewAdapter extends RecyclerView.Adapter<MainRecycleViewAdapter.ViewHolder> {
     private ArrayList<Message> mMessages;
 
+    public MainRecycleViewAdapter(ArrayList<Message> messages) {
+        this.mMessages = messages;
+    }
+
     @NonNull
     @Override
     public MainRecycleViewAdapter.ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
@@ -28,7 +33,7 @@ public class MainRecycleViewAdapter extends RecyclerView.Adapter<MainRecycleView
         LayoutInflater inflator = LayoutInflater.from(context);
 
         // create a new view
-        View activityListItem = inflator.inflate(R.layout.activity_stream, parent, false);
+        View activityListItem = inflator.inflate(R.layout.messages, parent, false);
         MainRecycleViewAdapter.ViewHolder viewHolder = new ViewHolder(activityListItem);
 
         return viewHolder;
@@ -42,7 +47,7 @@ public class MainRecycleViewAdapter extends RecyclerView.Adapter<MainRecycleView
         //Set variables in text views
         holder.userName.setText(message.getText());
         holder.text.setText(message.getText());
-        holder.date.setText(message.getDate());
+        //holder.date.setText(message.getDate());
         Picasso.get().load(Uri.parse(message.getImageUrl())).into(holder.image);
     }
 

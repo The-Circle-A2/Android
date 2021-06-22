@@ -5,17 +5,17 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     >
-
   <com.pedro.rtplibrary.view.OpenGlView
-      android:id="@+id/surfaceView"
       android:layout_width="match_parent"
       android:layout_height="match_parent"
-      app:AAEnabled="false"
+      android:id="@+id/surfaceView"
+      app:keepAspectRatio="true"
       app:aspectRatioMode="adjust"
+      app:AAEnabled="false"
+      app:numFilters="1"
       app:isFlipHorizontal="false"
       app:isFlipVertical="false"
-      app:keepAspectRatio="true"
-      app:numFilters="1" />
+      />
 
   <EditText
       android:textColor="@color/appColor"

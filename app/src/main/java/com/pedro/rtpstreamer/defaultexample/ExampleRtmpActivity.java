@@ -1,12 +1,8 @@
 package com.pedro.rtpstreamer.defaultexample;
 
-import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -137,10 +133,7 @@ public class ExampleRtmpActivity extends AppCompatActivity
           if (rtmpCamera1.isRecording()
               || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
             button.setText(R.string.stop_button);
-
-            rtmpCamera1.stopPreview();
-            startActivity(new Intent(this, StreamActivity.class));
-            //rtmpCamera1.startStream(etUrl.getText().toString());
+            rtmpCamera1.startStream(etUrl.getText().toString());
           } else {
             Toast.makeText(this, "Error preparing stream, This device cant do it",
                 Toast.LENGTH_SHORT).show();

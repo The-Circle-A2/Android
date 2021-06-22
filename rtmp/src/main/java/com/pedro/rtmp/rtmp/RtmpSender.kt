@@ -6,6 +6,7 @@ import android.os.HandlerThread
 import android.util.Log
 import com.pedro.rtmp.flv.FlvPacket
 import com.pedro.rtmp.flv.FlvType
+import com.pedro.rtmp.flv.SignaturePacket
 import com.pedro.rtmp.flv.audio.AacPacket
 import com.pedro.rtmp.flv.audio.AudioPacketCallback
 import com.pedro.rtmp.flv.video.H264Packet
@@ -17,10 +18,9 @@ import java.io.OutputStream
 import java.nio.ByteBuffer
 import java.security.*
 import java.security.spec.PKCS8EncodedKeySpec
-import java.security.spec.X509EncodedKeySpec
 import java.util.*
 import java.util.concurrent.*
-import kotlin.collections.ArrayList
+import kotlin.math.min
 
 /**
  * Created by pedro on 8/04/21.
@@ -34,9 +34,9 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     @Volatile
     private var flvPacketBlockingQueue: BlockingQueue<FlvPacket> = LinkedBlockingQueue(60)
     @Volatile
-    private var videoSignatureBlockingDeque: BlockingDeque<ByteArray> = LinkedBlockingDeque(60);
+    private var videoSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(60)
     @Volatile
-    private var audioSignatureBlockingDeque: BlockingDeque<ByteArray> = LinkedBlockingDeque(60);
+    private var audioSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(60)
     private val signatureSize: Int = 5
     private var streamThread: HandlerThread? = null
     private var signatureThread: HandlerThread? = null
@@ -78,7 +78,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     override fun onVideoFrameCreated(flvPacket: FlvPacket) {
       try {
         flvPacketBlockingQueue.add(flvPacket)
-        videoSignatureBlockingDeque.addLast(flvPacket.buffer)
+        videoSignatureBlockingDeque.addLast(flvPacket)
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Video frame discarded")
         droppedVideoFrames++
@@ -88,7 +88,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     override fun onAudioFrameCreated(flvPacket: FlvPacket) {
       try {
         flvPacketBlockingQueue.add(flvPacket)
-        audioSignatureBlockingDeque.addLast(flvPacket.buffer)
+        audioSignatureBlockingDeque.addLast(flvPacket)
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Audio frame discarded")
         droppedAudioFrames++
@@ -236,21 +236,24 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
       isEnableLogs = enable
     }
 
-    private val signatureList: MutableList<ByteArray> = LinkedList()
-
     fun ByteArray.toHexString(): String = joinToString("") { java.lang.Byte.toUnsignedInt(it).toString(radix = 16).padStart(2, '0') }
 
     // Function for checking if there are enough frames to make a signature
     // Makes a signature and puts it in a data message if possible
-    private fun checkAndMakeSignature(signatureBlockingDeque: BlockingDeque<ByteArray>, flvType: FlvType) {
+    private fun checkAndMakeSignature(signatureBlockingDeque: BlockingDeque<FlvPacket>, flvType: FlvType) {
         if (signatureBlockingDeque.size >= signatureSize) {
-            val byteArrayList: MutableList<ByteArray> = ArrayList(signatureSize)
-            signatureBlockingDeque.drainTo(byteArrayList, signatureSize)
-            Log.e(SIG_TAG, "Byte List Size: ${byteArrayList.map { byteArray -> byteArray.count() }.sum()}")
+            val byteArrayList: MutableList<ByteArray> = LinkedList()
+            val backupList: MutableList<FlvPacket> = LinkedList()
+            for (i in 1..signatureSize) {
+                val packet = signatureBlockingDeque.pollFirst(10, TimeUnit.MILLISECONDS)
+                backupList.add(packet)
+                byteArrayList.add(packet.buffer)
+                byteArrayList.add(packet.timeStamp.toBytes())
+            }
 
             try {
                 // If there somehow are not exactly 5 frames, put all of them back in the que (in the right order) and try again next loop
-                if (byteArrayList.size != signatureSize) {
+                if (byteArrayList.size != signatureSize * 2) {
                     throw Exception()
                 }
 
@@ -259,27 +262,36 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 val byteArray: ByteArray = byteArrayListToByteArray(byteArrayList)
 
                 val signature = signByteArray(byteArray)
+                val timestamps: List<Double> = backupList.map { it.timeStamp.toDouble() }
+                val signaturePacket = SignaturePacket(signature, timestamps, flvType)
+                Log.e(SIG_TAG, "Signature timestamps: $timestamps")
+                Log.e(SIG_TAG, "Signature Hash: ${MessageDigest.getInstance("SHA-256").digest(byteArray).toHexString()}")
                 Log.e(SIG_TAG, "Signature: ${signature.toHexString()}")
-                signatureList.add(signature)
 
 //                val result = verifyByteArray(byteArray, signature)
 //                Log.e(SIG_TAG, "Verify: $result")
 
                 var size = 0
                 output?.let { output ->
-                    size = commandsManager.sendSignature(signature, flvType, output)
+                    size = commandsManager.sendSignature(signaturePacket, flvType, output)
                     if (isEnableLogs) {
                         Log.i(SIG_TAG, "wrote $flvType signature packet, size $size")
                     }
                 }
                 bitrateManager.calculateBitrate(size * 8L)
             } catch (e: Exception) {
-                Log.e(TAG, e.toString())
+                Log.e(TAG, "Error Found: $e")
 
-                byteArrayList.reverse()
-                byteArrayList.forEach { signatureBlockingDeque.addFirst(it) }
+                backupList.reverse()
+                backupList .forEach { signatureBlockingDeque.addFirst(it) }
             }
         }
+    }
+
+    private fun Long.toBytes(): ByteArray {
+        val buffer: ByteBuffer = ByteBuffer.allocate(Long.SIZE_BYTES)
+        buffer.putLong(min(this, 0xFFFFFF))
+        return buffer.array()
     }
 
     private fun byteArrayListToByteArray(byteArrayList: MutableList<ByteArray>): ByteArray {
@@ -319,18 +331,5 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
         signature.update(data)
 
         return signature.sign()
-    }
-
-    private fun verifyByteArray(data: ByteArray, signatureByteArray: ByteArray): Boolean {
-        val publicKeyBytes = Base64.getDecoder().decode(PUBLIC_KEY)
-        val publicKeySpec = X509EncodedKeySpec(publicKeyBytes)
-        val keyFactory = KeyFactory.getInstance("RSA")
-        val publicKey: PublicKey = keyFactory.generatePublic(publicKeySpec)
-
-        val signature = Signature.getInstance("SHA256withRSA")
-        signature.initVerify(publicKey)
-        signature.update(data)
-
-        return signature.verify(signatureByteArray)
     }
 }

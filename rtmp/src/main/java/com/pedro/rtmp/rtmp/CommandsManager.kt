@@ -4,6 +4,7 @@ import android.util.Log
 import com.pedro.rtmp.amf.v0.*
 import com.pedro.rtmp.flv.FlvPacket
 import com.pedro.rtmp.flv.FlvType
+import com.pedro.rtmp.flv.SignaturePacket
 import com.pedro.rtmp.rtmp.chunk.ChunkStreamId
 import com.pedro.rtmp.rtmp.chunk.ChunkType
 import com.pedro.rtmp.rtmp.message.*
@@ -162,18 +163,17 @@ class CommandsManager {
 
   fun ByteArray.toHexString(): String = joinToString("") { java.lang.Byte.toUnsignedInt(it).toString(radix = 16).padStart(2, '0') }
 
-  fun sendSignature(signature: ByteArray, signatureType: FlvType, output: OutputStream): Int {
+  fun sendSignature(signature: SignaturePacket, signatureType: FlvType, output: OutputStream): Int {
     val name = "@setSignature"
     val signatureMessage = DataAmf0(name, getCurrentTimestamp(), streamId)
-    signatureMessage.addData(AmfString("$signatureType Signature"))
-    val amfEcmaArray = AmfEcmaArray()
-    amfEcmaArray.setProperty("signature", signature.toHexString())
-    signatureMessage.addData(amfEcmaArray)
+    signatureMessage.addData(AmfString(signatureType.toString()))
+    signatureMessage.addData(AmfString(signature.signature.toHexString()))
+    val timestamps = AmfStrictArray(signature.timestamps.map { AmfNumber(it) }.toMutableList())
+    signatureMessage.addData(timestamps)
 
     signatureMessage.writeHeader(output)
     signatureMessage.writeBody(output)
     output.flush()
-    Log.i(TAG, "send signature $signatureMessage")
     return signatureMessage.header.getPacketLength()
   }
 

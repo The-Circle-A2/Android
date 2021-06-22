@@ -2,6 +2,7 @@
   <string name="app_name">RTMP-RTSP Streamer</string>
   <string name="version">Version: %1$s</string>
 
+  <string name="stream">Stream</string>
   <string name="rtsp_streamer">Custom RTSP</string>
   <string name="rtmp_streamer">Custom RTMP</string>
   <string name="default_rtmp">Default RTMP</string>
@@ -35,6 +36,10 @@
   <string name="stream_uri_input_title">Stream Uri:</string>
   <string name="user_name_input_title">Username:</string>
   <string name="submit_form">Submit</string>
+
+  <string name="live">Live</string>
+  <string name="stop_stream">Stop stream</string>
+  <string name="comment_placeholder">Comment</string>
   <!--menu-->
   <string name="microphone">Microphone</string>
   <string name="filters">Filters</string>

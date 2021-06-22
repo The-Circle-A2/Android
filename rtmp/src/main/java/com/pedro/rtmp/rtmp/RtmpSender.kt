@@ -83,7 +83,6 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
             isFirstAudioPacket = false
         } else {
             flvPacketBlockingQueue.add(flvPacket)
-            videoSignatureBlockingDeque.addLast(flvPacket)
         }
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Video frame discarded")
@@ -97,7 +96,6 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
             isFirstAudioPacket = false
         } else {
             flvPacketBlockingQueue.add(flvPacket)
-            audioSignatureBlockingDeque.addLast(flvPacket)
         }
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Audio frame discarded")
@@ -132,6 +130,11 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 audioFramesSent++
                 output?.let { output ->
                   size = commandsManager.sendAudioPacket(flvPacket, output)
+                    if (flvPacket.type.equals(FlvType.AUDIO)) {
+                        audioSignatureBlockingDeque.addLast(flvPacket)
+                    } else {
+                        videoSignatureBlockingDeque.addLast(flvPacket)
+                    }
                   if (isEnableLogs) {
                     Log.i(TAG, "wrote Audio packet, size $size")
                   }

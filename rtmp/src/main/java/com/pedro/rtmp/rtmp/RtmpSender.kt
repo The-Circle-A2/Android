@@ -49,6 +49,8 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     private set
         private val bitrateManager: BitrateManager = BitrateManager(connectCheckerRtmp)
     private var isEnableLogs = true
+    private var isFirstVideoPacket = true
+    private var isFirstAudioPacket = true
 
     companion object {
       private const val TAG = "RtmpSender"
@@ -77,8 +79,12 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     override fun onVideoFrameCreated(flvPacket: FlvPacket) {
       try {
-        flvPacketBlockingQueue.add(flvPacket)
-        videoSignatureBlockingDeque.addLast(flvPacket)
+        if (isFirstVideoPacket) {
+            isFirstAudioPacket = false
+        } else {
+            flvPacketBlockingQueue.add(flvPacket)
+            videoSignatureBlockingDeque.addLast(flvPacket)
+        }
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Video frame discarded")
         droppedVideoFrames++
@@ -87,8 +93,12 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     override fun onAudioFrameCreated(flvPacket: FlvPacket) {
       try {
-        flvPacketBlockingQueue.add(flvPacket)
-        audioSignatureBlockingDeque.addLast(flvPacket)
+        if (isFirstAudioPacket) {
+            isFirstAudioPacket = false
+        } else {
+            flvPacketBlockingQueue.add(flvPacket)
+            audioSignatureBlockingDeque.addLast(flvPacket)
+        }
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Audio frame discarded")
         droppedAudioFrames++

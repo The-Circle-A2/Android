@@ -69,7 +69,7 @@
         android:layout_margin="5dp"
         android:layout_alignParentRight="true"
         android:background="#000080"
-        android:text="@string/stop_stream"
+        android:text="@string/start_button"
         android:onClick="onClick"/>
 
   </RelativeLayout>

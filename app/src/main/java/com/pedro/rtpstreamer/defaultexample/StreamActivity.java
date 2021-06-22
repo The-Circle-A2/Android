@@ -80,24 +80,6 @@ public class StreamActivity extends AppCompatActivity
 
     // specify an adapter
     setAdapter(mMessages);
-
-    try {
-      if (!rtmpCamera1.isStreaming()) {
-        if (rtmpCamera1.isRecording()
-                || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
-          rtmpCamera1.stopPreview();
-          rtmpCamera1.startStream("rtmp://145.49.29.107:1935/live/69");
-        } else {
-          Toast.makeText(this, "Error preparing stream, This device cant do it",
-                  Toast.LENGTH_SHORT).show();
-        }
-      } else {
-        stopStreamButton.setText(R.string.start_button);
-        rtmpCamera1.stopStream();
-      }
-    } catch (CameraOpenException e) {
-      Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
-    }
   }
 
   private void setAdapter(ArrayList<Message> mMessages){
@@ -191,22 +173,24 @@ public class StreamActivity extends AppCompatActivity
   public void onClick(View view) {
     switch (view.getId()) {
       case R.id.b_start_stop:
-        if (!rtmpCamera1.isStreaming()) {
-          if (rtmpCamera1.isRecording()
-              || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
-            stopStreamButton.setText(R.string.stop_button);
-            rtmpCamera1.stopStream();
-            rtmpCamera1.stopPreview();
-            startActivity(new Intent(this, MainActivity.class));
+        try {
+          if (!rtmpCamera1.isStreaming()) {
+            if (rtmpCamera1.isRecording()
+                    || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
+              rtmpCamera1.stopPreview();
+              rtmpCamera1.startStream("rtmp://192.168.2.13:1935/live/69");
+              stopStreamButton.setText(R.string.stop_button);
+            } else {
+              Toast.makeText(this, "Error preparing stream, This device cant do it",
+                      Toast.LENGTH_SHORT).show();
+            }
           } else {
-            Toast.makeText(this, "Error preparing stream, This device cant do it",
-                Toast.LENGTH_SHORT).show();
+            stopStreamButton.setText(R.string.start_button);
+            rtmpCamera1.stopStream();
           }
-        } else {
-          stopStreamButton.setText(R.string.start_button);
-          rtmpCamera1.stopStream();
+        } catch (CameraOpenException e) {
+          Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-        startActivity(new Intent(this, StartStreamActivity.class));
         break;
       case R.id.switch_camera:
         try {

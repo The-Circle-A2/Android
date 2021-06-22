@@ -14,7 +14,7 @@
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/messageId"
+            android:id="@+id/message_id"
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="0"
@@ -27,14 +27,14 @@
             android:orientation="horizontal">
 
             <ImageView
-                android:id="@+id/imageViewPFP"
+                android:id="@+id/message_photo"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="10dp"
                 app:srcCompat="@drawable/pfp" />
 
             <TextView
-                android:id="@+id/messageName"
+                android:id="@+id/message_user_name"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
@@ -44,7 +44,7 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/messageText"
+            android:id="@+id/message_text"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Hoi, dit is een berichtje"

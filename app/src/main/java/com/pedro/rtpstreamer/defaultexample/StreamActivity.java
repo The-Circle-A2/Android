@@ -1,5 +1,6 @@
 package com.pedro.rtpstreamer.defaultexample;
 
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.SurfaceHolder;
@@ -15,6 +16,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.pedro.encoder.input.video.CameraOpenException;
 import com.pedro.rtmp.utils.ConnectCheckerRtmp;
 import com.pedro.rtplibrary.rtmp.RtmpCamera1;
+import com.pedro.rtpstreamer.MainActivity;
 import com.pedro.rtpstreamer.R;
 import com.pedro.rtpstreamer.utils.PathUtils;
 
@@ -42,7 +44,6 @@ public class StreamActivity extends AppCompatActivity
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
-    Toast.makeText(this, "Streaming...", Toast.LENGTH_LONG).show();
     super.onCreate(savedInstanceState);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     setContentView(R.layout.activity_stream);
@@ -53,7 +54,7 @@ public class StreamActivity extends AppCompatActivity
     rtmpCamera1 = new RtmpCamera1(surfaceView, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
-    Toast.makeText(this, "Klaar!", Toast.LENGTH_LONG).show();
+    rtmpCamera1.startStream(etUrl.getText().toString());
   }
 
   @Override
@@ -131,7 +132,10 @@ public class StreamActivity extends AppCompatActivity
           if (rtmpCamera1.isRecording()
               || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
             button.setText(R.string.stop_button);
-            rtmpCamera1.startStream(etUrl.getText().toString());
+            rtmpCamera1.stopStream();
+            rtmpCamera1.stopRecord();
+            rtmpCamera1.stopPreview();
+            startActivity(new Intent(this, MainActivity.class));
           } else {
             Toast.makeText(this, "Error preparing stream, This device cant do it",
                 Toast.LENGTH_SHORT).show();

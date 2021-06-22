@@ -139,8 +139,8 @@ public class ExampleRtmpActivity extends AppCompatActivity
             button.setText(R.string.stop_button);
 
             rtmpCamera1.stopPreview();
+            rtmpCamera1.startStream(etUrl.getText().toString());
             startActivity(new Intent(this, StreamActivity.class));
-            //rtmpCamera1.startStream(etUrl.getText().toString());
           } else {
             Toast.makeText(this, "Error preparing stream, This device cant do it",
                 Toast.LENGTH_SHORT).show();

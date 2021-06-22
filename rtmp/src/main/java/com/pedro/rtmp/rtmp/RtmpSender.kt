@@ -6,9 +6,10 @@ import android.os.HandlerThread
 import android.util.Log
 import com.pedro.rtmp.flv.FlvPacket
 import com.pedro.rtmp.flv.FlvType
-import com.pedro.rtmp.flv.SignaturePacket
+import com.pedro.rtmp.flv.signature.SignaturePacket
 import com.pedro.rtmp.flv.audio.AacPacket
 import com.pedro.rtmp.flv.audio.AudioPacketCallback
+import com.pedro.rtmp.flv.signature.PrivateKeyGetter
 import com.pedro.rtmp.flv.video.H264Packet
 import com.pedro.rtmp.flv.video.ProfileIop
 import com.pedro.rtmp.flv.video.VideoPacketCallback
@@ -16,16 +17,16 @@ import com.pedro.rtmp.utils.BitrateManager
 import com.pedro.rtmp.utils.ConnectCheckerRtmp
 import java.io.OutputStream
 import java.nio.ByteBuffer
-import java.security.*
-import java.security.spec.PKCS8EncodedKeySpec
+import java.security.MessageDigest
+import java.security.PrivateKey
+import java.security.Signature
 import java.util.*
 import java.util.concurrent.*
-import kotlin.math.min
 
 /**
  * Created by pedro on 8/04/21.
  */
-class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val commandsManager: CommandsManager) : AudioPacketCallback, VideoPacketCallback {
+class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val commandsManager: CommandsManager, private val privateKeyGetter: PrivateKeyGetter) : AudioPacketCallback, VideoPacketCallback {
 
     private var aacPacket = AacPacket(this)
     private var h264Packet = H264Packet(this)
@@ -51,6 +52,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     private var isEnableLogs = true
     private var isFirstVideoPacket = true
     private var isFirstAudioPacket = true
+    private var privateKey: PrivateKey? = null
 
     companion object {
       private const val TAG = "RtmpSender"
@@ -315,29 +317,10 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
         return byteArray
     }
 
-    private val PRIVATE_KEY: String = "MIICWgIBAAKBgHcyTFikOhMTDuiisl6kwRpSBmrEstw1+gYboOQtugugpYVHcSwI" +
-            "UM9lFfiGN5zn6++bU8DDQScnIU4D7Zg6S3/h1dyqyHjIzSD9fvCcbaJlFC32mrNO" +
-            "SPhbF+irpHaIbS4e2V8qd6RdWerqJaXM7OsFEKydGzDW7G8lr5jIrAddAgMBAAEC" +
-            "gYADPqNFZnMOQd6OBp/EY8e95621ClW0GOQNdoMSswv1dRIMZr117WQFwUKv2Td6" +
-            "VfXeN+Q3wxjq7+3AKes10aBseQmXB68iJ7e78LjsaU4f02j5WQOPTQRy2f4H/Cgm" +
-            "dZplSuyuWUQUL0UM2CH4bhXPKLDXkfPhuLwPxl7tD83SAQJBANcqZg6rQAM22DVI" +
-            "AW0kUJjUDCrHq0m8sIR2dSEfqoxVegDSdXZ5/hdgkS5Ly61p4BwfQ1fbrajkjFZi" +
-            "oZQXftECQQCN0VZIkzMyX83h65QsoGdjq1wO2d/BbU3NUfTy9zg3qjrQ1DgPeyU4" +
-            "BWNSaB7+eRsyaelxhij5iq7NMOvoZlrNAkBi/hbGWPOyhuEiYmaFmFeceLLAW+zq" +
-            "l+1+hCGPg8orlofzKODyCV5l0v/4lNa4iiWZyqhpG6DiO4R1mhtMzyKBAkAWk4m5" +
-            "2f0fetLqsTcQd6Sd4EyybIrLXxwwoGhvOV3wtp/QWMhn5oHBTlJGbx7oAd2LhALO" +
-            "uL3TI/m53pzfjVPNAkBZfx4rEHrucEcfgoQjU5PDUDkATBHLa7juPc4hEzViHcRi" +
-            "1oz0hdGXB1kSldcK9ejqbMuNvm905jFkaauqYwv+"
-    private val PUBLIC_KEY: String = "MIGeMA0GCSqGSIb3DQEBAQUAA4GMADCBiAKBgHcyTFikOhMTDuiisl6kwRpSBmrE" +
-            "stw1+gYboOQtugugpYVHcSwIUM9lFfiGN5zn6++bU8DDQScnIU4D7Zg6S3/h1dyq" +
-            "yHjIzSD9fvCcbaJlFC32mrNOSPhbF+irpHaIbS4e2V8qd6RdWerqJaXM7OsFEKyd" +
-            "GzDW7G8lr5jIrAddAgMBAAE="
-
     private fun signByteArray(data: ByteArray): ByteArray {
-        val privateKeyBytes = Base64.getDecoder().decode(PRIVATE_KEY)
-        val privateKeySpec = PKCS8EncodedKeySpec(privateKeyBytes)
-        val keyFactory = KeyFactory.getInstance("RSA")
-        val privateKey: PrivateKey = keyFactory.generatePrivate(privateKeySpec)
+        if (privateKey == null) {
+            privateKey = privateKeyGetter.getPrivateKey()
+        }
 
         val signature = Signature.getInstance("SHA256withRSA")
         signature.initSign(privateKey)

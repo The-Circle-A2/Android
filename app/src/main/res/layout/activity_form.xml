@@ -107,18 +107,18 @@
 
 
             <TextView
-                android:id="@+id/public_key_input_title"
+                android:id="@+id/private_key_input_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:layout_marginTop="15dp"
-                android:text="@string/public_key_input_title"
+                android:text="@string/private_key_input_title"
                 android:textAlignment="center"
                 android:textColor="@color/black"
                 android:textSize="14sp" />
 
             <EditText
-                android:id="@+id/public_key_input"
+                android:id="@+id/private_key_input"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"

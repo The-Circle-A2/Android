@@ -32,7 +32,7 @@
   <!--views-->
   <string name="authentication_title">The Circle</string>
   <string name="authentication_subtitle">Provide the following information:</string>
-  <string name="public_key_input_title">Public key:</string>
+  <string name="private_key_input_title">Private key:</string>
   <string name="stream_uri_input_title">Stream Uri:</string>
   <string name="user_name_input_title">Username:</string>
   <string name="submit_form">Submit</string>

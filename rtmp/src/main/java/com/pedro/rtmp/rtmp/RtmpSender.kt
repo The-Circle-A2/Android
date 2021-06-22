@@ -300,7 +300,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     private fun Long.toBytes(): ByteArray {
         val buffer: ByteBuffer = ByteBuffer.allocate(Long.SIZE_BYTES)
-        buffer.putLong(min(this, 0xFFFFFF))
+        buffer.putLong(this)
         return buffer.array()
     }
 

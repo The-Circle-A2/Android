@@ -7,16 +7,11 @@
     android:layout_height="match_parent"
     >
 
-    <com.pedro.rtplibrary.view.OpenGlView
-        android:id="@+id/surfaceView"
+    <SurfaceView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        app:AAEnabled="false"
-        app:aspectRatioMode="adjust"
-        app:isFlipHorizontal="false"
-        app:isFlipVertical="false"
-        app:keepAspectRatio="true"
-        app:numFilters="1" />
+        android:id="@+id/surfaceView"
+        />
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -27,12 +22,13 @@
         >
 
         <ImageView
-            android:id="@+id/start_recording"
+            android:id="@+id/start_streaming"
             android:layout_width="wrap_content"
             android:layout_height="150dp"
             android:layout_gravity="center"
             android:contentDescription="@string/authentication_title"
-            android:src="@drawable/start_recording" />
+            android:src="@drawable/start_recording"
+            android:onClick="onClick"/>
 
         <ImageView
             android:id="@+id/reverse_camera"
@@ -41,6 +37,7 @@
             android:layout_gravity="end"
             android:layout_marginEnd="20dp"
             android:contentDescription="@string/authentication_title"
-            android:src="@drawable/reverse" />
+            android:src="@drawable/reverse"
+            android:onClick="onClick"/>
     </FrameLayout>
 </RelativeLayout>

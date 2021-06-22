@@ -207,25 +207,41 @@
       android:gravity="center"
       >
 
-    <EditText
-        android:id="@+id/editTextComment"
+    <LinearLayout
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
-        android:ems="10"
-        android:layout_marginEnd="25dp"
-        android:inputType="textAutoCorrect"
-        android:hint="@string/comment_placeholder"
-        android:background="@drawable/chat_circle"
-        android:textColor="#3E3E3E" />
+        android:layout_marginEnd="30dp"
+        android:orientation="horizontal">
+
+      <EditText
+          android:id="@+id/editTextComment"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:background="@drawable/chat_circle"
+          android:ems="10"
+          android:hint="@string/comment_placeholder"
+          android:inputType="textAutoCorrect"
+          android:textColor="#3E3E3E" />
+
+      <ImageButton
+          android:id="@+id/imageButtonSend"
+          android:layout_width="wrap_content"
+          android:layout_height="wrap_content"
+          android:layout_weight="1"
+          android:background="@color/white"
+          app:srcCompat="@android:drawable/ic_menu_send" />
+
+    </LinearLayout>
 
     <ImageButton
-        android:id="@+id/imageButtonSend"
+        android:id="@+id/imageButtonSwitch"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="match_parent"
         android:layout_weight="1"
         android:background="@color/white"
-        app:srcCompat="@android:drawable/ic_menu_send" />
+        app:srcCompat="@android:drawable/ic_menu_rotate" />
 
   </LinearLayout>
 </RelativeLayout>

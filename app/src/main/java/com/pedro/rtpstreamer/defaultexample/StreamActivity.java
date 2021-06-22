@@ -52,7 +52,6 @@ public class StreamActivity extends AppCompatActivity
     rtmpCamera1 = new RtmpCamera1(surfaceView, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
-    rtmpCamera1.startStream(etUrl.getText().toString());
     try {
       if (!rtmpCamera1.isStreaming()) {
         if (rtmpCamera1.isRecording()
@@ -146,9 +145,8 @@ public class StreamActivity extends AppCompatActivity
         if (!rtmpCamera1.isStreaming()) {
           if (rtmpCamera1.isRecording()
               || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
-            button.setText(R.string.stop_button);
+            //button.setText(R.string.stop_button);
             rtmpCamera1.stopStream();
-            rtmpCamera1.stopRecord();
             rtmpCamera1.stopPreview();
             startActivity(new Intent(this, MainActivity.class));
           } else {
@@ -156,7 +154,7 @@ public class StreamActivity extends AppCompatActivity
                 Toast.LENGTH_SHORT).show();
           }
         } else {
-          button.setText(R.string.start_button);
+          //button.setText(R.string.start_button);
           rtmpCamera1.stopStream();
         }
         startActivity(new Intent(this, StartStreamActivity.class));

@@ -19,6 +19,7 @@ import com.pedro.rtpstreamer.customexample.RtmpActivity;
 import com.pedro.rtpstreamer.customexample.RtspActivity;
 import com.pedro.rtpstreamer.defaultexample.ExampleRtmpActivity;
 import com.pedro.rtpstreamer.defaultexample.ExampleRtspActivity;
+import com.pedro.rtpstreamer.defaultexample.StreamActivity;
 import com.pedro.rtpstreamer.displayexample.DisplayActivity;
 import com.pedro.rtpstreamer.filestreamexample.RtmpFromFileActivity;
 import com.pedro.rtpstreamer.filestreamexample.RtspFromFileActivity;
@@ -68,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
   private void createList() {
     activities = new ArrayList<>();
     activities.add(
-        new ActivityLink(new Intent(this, RtmpActivity.class), getString(R.string.rtmp_streamer),
+        new ActivityLink(new Intent(this, StreamActivity.class), getString(R.string.rtmp_streamer),
             JELLY_BEAN));
     activities.add(
         new ActivityLink(new Intent(this, RtspActivity.class), getString(R.string.rtsp_streamer),

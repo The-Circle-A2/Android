@@ -105,7 +105,7 @@
               app:srcCompat="@drawable/pfp" />
 
           <TextView
-              android:id="@+id/textViewName"
+              android:id="@+id/messageName"
               android:layout_width="wrap_content"
               android:layout_height="wrap_content"
               android:layout_weight="1"
@@ -115,7 +115,7 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/textViewMessage"
+            android:id="@+id/messageText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="Hoi, dit is een berichtje"

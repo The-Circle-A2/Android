@@ -4,7 +4,6 @@ import android.text.TextUtils;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -13,55 +12,96 @@ import java.net.URISyntaxException;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 
 public class SocketConnection {
     private Socket clientSocket;
     private PrintWriter out;
     private BufferedReader in;
 
-
-    public void startConnection(String ip, int port) {
-        //Socket clientSocket = null;
+    public void startConnection() {
+        System.out.println("Start connection");
         try {
             // ws://seechange-chat.the-circle.designone.nl:80
+            System.out.println("in try");
             clientSocket = IO.socket("http://localhost:3000");
+           
+            clientSocket.on("message", onNewMessage);
+            clientSocket.on("streamUsers", onStreamUsers);
             clientSocket.connect();
+
+            System.out.println(clientSocket.id());
+
             clientSocket.emit("joinstream", "");
-            //out = new PrintWriter(clientSocket.getOutputStream(), true);
-            //in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
         } catch (URISyntaxException e) {
-            e.printStackTrace();
+            System.out.println("dikke error neef");
+            //e.printStackTrace();
         }
     }
 
-        public void sendMessage(String msg) throws IOException {
-            System.out.println(msg);
+    public void sendMessage(String msg) throws IOException {
+        System.out.println(msg);
 
-            if (TextUtils.isEmpty(msg)) {
-                return;
-            }
+        if (TextUtils.isEmpty(msg)) {
+            return;
+        }
 
-            clientSocket.emit("chatMessage", msg);
-//            JSONObject object = new JSONObject();
-//            try {
-//                object.put("_id", "?");
-//                object.put("name", "message username");
-//                object.put("date", "message.time");
-//                object.put("message", "message.message");
-//                object.put("info", false);
-//            } catch (JSONException e) {
-//                e.printStackTrace();
-//            }
+        clientSocket.emit("chatMessage", msg);
+    }
+
+    private Emitter.Listener onNewMessage = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+//            getActivity().runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    JSONObject data = (JSONObject) args[0];
+//                    String username;
+//                    String message;
+//                    try {
+//                        username = data.getString("username");
+//                        message = data.getString("message");
+//                    } catch (JSONException e) {
+//                        return;
+//                    }
 //
-//            System.out.println(object);
-//            out.println(msg);
-//            String resp = in.readLine();
-//            return resp;
+//                    // add the message to view
+//                    addMessage(username, message);
+//                }
+//            });
         }
+    };
 
-        public void stopConnection() throws IOException {
-            in.close();
-            out.close();
-            clientSocket.close();
+    private Emitter.Listener onStreamUsers = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+//            getActivity().runOnUiThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    JSONObject data = (JSONObject) args[0];
+//                    String username;
+//                    String message;
+//                    try {
+//                        username = data.getString("username");
+//                        message = data.getString("message");
+//                    } catch (JSONException e) {
+//                        return;
+//                    }
+//
+//                    // add the message to view
+//                    addMessage(username, message);
+//                }
+//            });
         }
+    };
+
+    public void disconnect() throws IOException {
+        clientSocket.emit("disconnectUserFromStream", "");
     }
+
+    public void stopConnection() throws IOException {
+//            in.close();
+//            out.close();
+        clientSocket.close();
+    }
+}

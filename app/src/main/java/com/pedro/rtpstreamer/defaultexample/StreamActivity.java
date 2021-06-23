@@ -28,6 +28,7 @@ import com.pedro.tasks.GetItemAsyncTask;
 import com.pedro.tasks.SocketConnection;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
 
@@ -56,7 +57,7 @@ public class StreamActivity extends AppCompatActivity
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     setContentView(R.layout.activity_stream);
 
-    //        socket.startConnection();
+    socket.startConnection();
 
     folder = PathUtils.getRecordPath(this);
     SurfaceView surfaceView = findViewById(R.id.surfaceView);
@@ -206,7 +207,11 @@ public class StreamActivity extends AppCompatActivity
         break;
       case R.id.imageButtonSend:
         String msg = String.valueOf(editTextComment.getText());
-//        socket.sendMessage(msg)
+        try {
+          socket.sendMessage(msg);
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
         break;
       default:
         break;

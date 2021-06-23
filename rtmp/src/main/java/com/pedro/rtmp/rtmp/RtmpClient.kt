@@ -113,14 +113,15 @@ class RtmpClient(private val connectCheckerRtmp: ConnectCheckerRtmp): PrivateKey
   }
 
   @JvmOverloads
-  fun connect(url: String?, isRetry: Boolean = false) {
+  fun connect(username: String?, isRetry: Boolean = false) {
     if (!isRetry) doingRetry = true
-    if (url == null) {
+    if (username == null) {
       isStreaming = false
       connectCheckerRtmp.onConnectionFailedRtmp(
           "Endpoint malformed, should be: rtmp://ip:port/appname/streamname")
       return
     }
+    val url = "rtmp://188.166.114.122:1936/live/$username"
     if (!isStreaming || isRetry) {
       this.url = url
       connectCheckerRtmp.onConnectionStartedRtmp(url)

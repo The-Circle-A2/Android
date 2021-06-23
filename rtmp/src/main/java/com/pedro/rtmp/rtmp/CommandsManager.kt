@@ -4,7 +4,7 @@ import android.util.Log
 import com.pedro.rtmp.amf.v0.*
 import com.pedro.rtmp.flv.FlvPacket
 import com.pedro.rtmp.flv.FlvType
-import com.pedro.rtmp.flv.SignaturePacket
+import com.pedro.rtmp.flv.signature.SignaturePacket
 import com.pedro.rtmp.rtmp.chunk.ChunkStreamId
 import com.pedro.rtmp.rtmp.chunk.ChunkType
 import com.pedro.rtmp.rtmp.message.*

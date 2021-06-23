@@ -8,6 +8,7 @@ import android.util.Log
 import com.pedro.rtmp.amf.v0.AmfNumber
 import com.pedro.rtmp.amf.v0.AmfObject
 import com.pedro.rtmp.amf.v0.AmfString
+import com.pedro.rtmp.flv.signature.PrivateKeyGetter
 import com.pedro.rtmp.flv.video.ProfileIop
 import com.pedro.rtmp.rtmp.message.*
 import com.pedro.rtmp.rtmp.message.command.Command
@@ -22,13 +23,18 @@ import java.net.InetSocketAddress
 import java.net.Socket
 import java.net.SocketAddress
 import java.nio.ByteBuffer
+import java.security.PrivateKey
 import java.util.*
 import java.util.regex.Pattern
 
 /**
  * Created by pedro on 8/04/21.
  */
-class RtmpClient(private val connectCheckerRtmp: ConnectCheckerRtmp) {
+class RtmpClient(private val connectCheckerRtmp: ConnectCheckerRtmp): PrivateKeyGetter {
+
+    constructor(connectCheckerRtmp: ConnectCheckerRtmp, privateKeyGetter: PrivateKeyGetter): this(connectCheckerRtmp) {
+      rtmpSender = RtmpSender(connectCheckerRtmp, commandsManager, privateKeyGetter)
+    }
 
   private val TAG = "RtmpClient"
   private val rtmpUrlPattern = Pattern.compile("^rtmps?://([^/:]+)(?::(\\d+))*/([^/]+)/?([^*]*)$")
@@ -38,7 +44,7 @@ class RtmpClient(private val connectCheckerRtmp: ConnectCheckerRtmp) {
   private var writer: BufferedOutputStream? = null
   private var thread: HandlerThread? = null
   private val commandsManager = CommandsManager()
-  private val rtmpSender = RtmpSender(connectCheckerRtmp, commandsManager)
+  private var rtmpSender = RtmpSender(connectCheckerRtmp, commandsManager, this)
 
   @Volatile
   var isStreaming = false
@@ -107,14 +113,15 @@ class RtmpClient(private val connectCheckerRtmp: ConnectCheckerRtmp) {
   }
 
   @JvmOverloads
-  fun connect(url: String?, isRetry: Boolean = false) {
+  fun connect(username: String?, isRetry: Boolean = false) {
     if (!isRetry) doingRetry = true
-    if (url == null) {
+    if (username == null) {
       isStreaming = false
       connectCheckerRtmp.onConnectionFailedRtmp(
           "Endpoint malformed, should be: rtmp://ip:port/appname/streamname")
       return
     }
+    val url = "rtmp://188.166.114.122:1936/live/$username"
     if (!isStreaming || isRetry) {
       this.url = url
       connectCheckerRtmp.onConnectionStartedRtmp(url)
@@ -479,5 +486,9 @@ class RtmpClient(private val connectCheckerRtmp: ConnectCheckerRtmp) {
 
   fun setLogs(enable: Boolean) {
     rtmpSender.setLogs(enable)
+  }
+
+  override fun getPrivateKey(): PrivateKey {
+    throw NotImplementedError("This class doesn't implement the getting of a key. It should be passed in the secondary constructor instead.")
   }
 }

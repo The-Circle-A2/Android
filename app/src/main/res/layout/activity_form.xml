@@ -52,34 +52,6 @@
 
 
             <TextView
-                android:id="@+id/stream_uri_input_title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:layout_marginTop="25dp"
-                android:text="@string/stream_uri_input_title"
-                android:textAlignment="center"
-                android:textColor="@color/black"
-                android:textSize="14sp" />
-
-            <EditText
-                android:id="@+id/stream_uri_input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:textSize="14sp"
-                android:layout_marginTop="5dp"
-                android:inputType="textUri"
-                android:textColor="@color/appColor"/>
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-
-            <TextView
                 android:id="@+id/user_name_input_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

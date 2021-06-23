@@ -13,6 +13,12 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.pedro.rtpstreamer.R;
 
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Base64;
+
 /**
  * More documentation see:
  * {@link com.pedro.rtplibrary.base.Camera1Base}
@@ -39,7 +45,6 @@ public class FormActivity extends AppCompatActivity
         setContentView(R.layout.activity_form);
 
         //Input fields
-        stream_uri_input    = (EditText)findViewById(R.id.stream_uri_input);
         user_name_input     = (EditText)findViewById(R.id.user_name_input);
         private_key_input   = (EditText)findViewById(R.id.private_key_input);
 
@@ -63,13 +68,29 @@ public class FormActivity extends AppCompatActivity
 
     private Boolean CheckPrefs()
     {
-        //TODO: verify if input is valid
-        if(!stream_uri_input.getText().toString().isEmpty() &&
-                !user_name_input.getText().toString().isEmpty() &&
-                !private_key_input.getText().toString().isEmpty()) {
+        String user_name = user_name_input.getText().toString();
+        String private_key_string = private_key_input.getText().toString();
+
+        if(user_name.isEmpty() || private_key_string.isEmpty()) {
             Toast.makeText(this, "Not all fields are filled.", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        String reducedPrivateKey = private_key_string
+                .replace("-----BEGIN PRIVATE KEY-----", "")
+                .replace("-----END PRIVATE KEY-----", "")
+                .replaceAll("\n", "")
+                .replaceAll("\\s+","");
+
+        KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(reducedPrivateKey));
+
+        try {
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            keyFactory.generatePrivate(keySpec);
+
             return true;
-        } else {
+        } catch (GeneralSecurityException e) {
+            Toast.makeText(this, "Private key is invalid.", Toast.LENGTH_SHORT).show();
             return false;
         }
     }
@@ -78,12 +99,8 @@ public class FormActivity extends AppCompatActivity
     {
         SharedPreferences.Editor editor = getSharedPreferences(CONNECTION_PREFS, MODE_PRIVATE).edit();
 
-        editor.putString("stream_uri_input", stream_uri_input.getText().toString());
-        editor.putString("user_name_input", user_name_input.getText().toString());
-        editor.putString("private_key_input", private_key_input.getText().toString());
+        editor.putString("USERNAME", user_name_input.getText().toString());
+        editor.putString("PRIVATE_KEY", private_key_input.getText().toString());
         editor.apply();
-
-        SharedPreferences prefs = getSharedPreferences(CONNECTION_PREFS, MODE_PRIVATE);
-        //Toast.makeText(this, prefs.getString("user_name_input", "error"), Toast.LENGTH_SHORT).show();
     }
 }

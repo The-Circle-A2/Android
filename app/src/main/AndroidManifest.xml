@@ -59,11 +59,6 @@
         android:screenOrientation="portrait"
         />
     <activity
-        android:name=".defaultexample.StreamActivity"
-        android:label="@string/stream"
-        android:screenOrientation="portrait"
-        />
-    <activity
         android:name=".filestreamexample.RtspFromFileActivity"
         android:label="@string/from_file_rtsp"
         android:screenOrientation="portrait"
@@ -115,6 +110,10 @@
     <activity
         android:name=".defaultexample.FormActivity"
         android:label="@string/form_activity"
+        />
+    <activity
+        android:name=".defaultexample.StreamActivity"
+        android:label="@string/stream"
         />
 
     <service android:name=".backgroundexample.RtpService"

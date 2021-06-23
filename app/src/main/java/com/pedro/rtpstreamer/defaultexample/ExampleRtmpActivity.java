@@ -1,12 +1,12 @@
 package com.pedro.rtpstreamer.defaultexample;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
 
+import android.preference.PreferenceManager;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
@@ -15,14 +15,23 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 import com.pedro.encoder.input.video.CameraOpenException;
+import com.pedro.rtmp.flv.signature.PrivateKeyGetter;
 import com.pedro.rtmp.utils.ConnectCheckerRtmp;
 import com.pedro.rtplibrary.rtmp.RtmpCamera1;
 import com.pedro.rtpstreamer.R;
 import com.pedro.rtpstreamer.utils.PathUtils;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Locale;
 
@@ -32,7 +41,7 @@ import java.util.Locale;
  * {@link com.pedro.rtplibrary.rtmp.RtmpCamera1}
  */
 public class ExampleRtmpActivity extends AppCompatActivity
-    implements ConnectCheckerRtmp, View.OnClickListener, SurfaceHolder.Callback {
+    implements ConnectCheckerRtmp, View.OnClickListener, SurfaceHolder.Callback, PrivateKeyGetter {
 
   private RtmpCamera1 rtmpCamera1;
   private Button button;
@@ -57,7 +66,7 @@ public class ExampleRtmpActivity extends AppCompatActivity
     switchCamera.setOnClickListener(this);
     etUrl = findViewById(R.id.et_rtp_url);
     etUrl.setHint(R.string.hint_rtmp);
-    rtmpCamera1 = new RtmpCamera1(surfaceView, this);
+    rtmpCamera1 = new RtmpCamera1(surfaceView, this, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
   }
@@ -137,7 +146,7 @@ public class ExampleRtmpActivity extends AppCompatActivity
           if (rtmpCamera1.isRecording()
               || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
             button.setText(R.string.stop_button);
-
+            rtmpCamera1.startStream(etUrl.getText().toString());
             rtmpCamera1.stopPreview();
             rtmpCamera1.startStream(etUrl.getText().toString());
             startActivity(new Intent(this, StreamActivity.class));
@@ -230,5 +239,29 @@ public class ExampleRtmpActivity extends AppCompatActivity
       button.setText(getResources().getString(R.string.start_button));
     }
     rtmpCamera1.stopPreview();
+  }
+
+  @NotNull
+  @Override
+  public PrivateKey getPrivateKey() {
+    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+    String privateKeyPKCS8 =  sharedPreferences.getString("PRIVATE_KEY", "");
+
+    if (privateKeyPKCS8.isEmpty()) {
+      throw new IllegalStateException("PRIVATE_KEY can not be gotten when it's not stored. User shouldn't be in this screen yet!");
+    }
+
+    String reducedPrivateKey = privateKeyPKCS8
+            .replace("-----BEGIN PRIVATE KEY-----\n", "")
+            .replace("\n-----END PRIVATE KEY-----\n", "");
+    KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(reducedPrivateKey));
+
+    try {
+      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+      return keyFactory.generatePrivate(keySpec);
+    } catch (GeneralSecurityException e) {
+      // TODO remove exception before done!
+      throw new RuntimeException("Something went wrong while parsing the user's private key!", e);
+    }
   }
 }

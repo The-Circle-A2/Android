@@ -1,8 +1,10 @@
 package com.pedro.rtpstreamer.defaultexample;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
@@ -19,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.pedro.MainRecycleViewAdapter;
 import com.pedro.encoder.input.video.CameraOpenException;
 import com.pedro.model.Message;
+import com.pedro.rtmp.flv.signature.PrivateKeyGetter;
 import com.pedro.rtmp.utils.ConnectCheckerRtmp;
 import com.pedro.rtplibrary.rtmp.RtmpCamera1;
 import com.pedro.rtpstreamer.MainActivity;
@@ -26,10 +29,18 @@ import com.pedro.rtpstreamer.R;
 import com.pedro.rtpstreamer.utils.PathUtils;
 import com.pedro.tasks.GetItemAsyncTask;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.io.File;
 import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
+import java.security.PrivateKey;
+import java.security.spec.KeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.ExecutionException;
@@ -40,7 +51,7 @@ import java.util.concurrent.ExecutionException;
  * {@link com.pedro.rtplibrary.rtmp.RtmpCamera1}
  */
 public class StreamActivity extends AppCompatActivity
-    implements ConnectCheckerRtmp, View.OnClickListener, SurfaceHolder.Callback {
+    implements ConnectCheckerRtmp, View.OnClickListener, SurfaceHolder.Callback, PrivateKeyGetter {
 
   private RtmpCamera1 rtmpCamera1;
   private Button stopStreamButton;
@@ -227,5 +238,29 @@ public class StreamActivity extends AppCompatActivity
       rtmpCamera1.stopStream();
     }
     rtmpCamera1.stopPreview();
+  }
+
+  @NotNull
+  @Override
+  public PrivateKey getPrivateKey() {
+    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+    String privateKeyPKCS8 =  sharedPreferences.getString("PRIVATE_KEY", "");
+
+    if (privateKeyPKCS8.isEmpty()) {
+      throw new IllegalStateException("PRIVATE_KEY can not be gotten when it's not stored. User shouldn't be in this screen yet!");
+    }
+
+    String reducedPrivateKey = privateKeyPKCS8
+            .replace("-----BEGIN PRIVATE KEY-----\n", "")
+            .replace("\n-----END PRIVATE KEY-----\n", "");
+    KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(reducedPrivateKey));
+
+    try {
+      KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+      return keyFactory.generatePrivate(keySpec);
+    } catch (GeneralSecurityException e) {
+      // TODO remove exception before done!
+      throw new RuntimeException("Something went wrong while parsing the user's private key!", e);
+    }
   }
 }

@@ -55,6 +55,9 @@ public class StreamActivity extends AppCompatActivity
     super.onCreate(savedInstanceState);
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     setContentView(R.layout.activity_stream);
+
+    //        socket.startConnection();
+
     folder = PathUtils.getRecordPath(this);
     SurfaceView surfaceView = findViewById(R.id.surfaceView);
     stopStreamButton = findViewById(R.id.b_start_stop);
@@ -203,7 +206,6 @@ public class StreamActivity extends AppCompatActivity
         break;
       case R.id.imageButtonSend:
         String msg = String.valueOf(editTextComment.getText());
-//        socket.startConnection();
 //        socket.sendMessage(msg)
         break;
       default:

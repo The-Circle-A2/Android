@@ -107,6 +107,10 @@
         android:name=".backgroundexample.BackgroundActivity"
         android:label="@string/service_rtp"
         />
+    <activity
+        android:name=".defaultexample.FormActivity"
+        android:label="@string/form_activity"
+        />
 
     <service android:name=".backgroundexample.RtpService"
         />

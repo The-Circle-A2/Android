@@ -145,7 +145,14 @@ public class ExampleRtmpActivity extends AppCompatActivity
           if (rtmpCamera1.isRecording()
               || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
             button.setText(R.string.stop_button);
+<<<<<<< HEAD
             rtmpCamera1.startStream(etUrl.getText().toString());
+=======
+
+            rtmpCamera1.stopPreview();
+            rtmpCamera1.startStream(etUrl.getText().toString());
+            startActivity(new Intent(this, StreamActivity.class));
+>>>>>>> origin/develop
           } else {
             Toast.makeText(this, "Error preparing stream, This device cant do it",
                 Toast.LENGTH_SHORT).show();

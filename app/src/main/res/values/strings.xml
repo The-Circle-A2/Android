@@ -28,6 +28,22 @@
   <string name="start_record">Start record</string>
   <string name="stop_record">Stop record</string>
   <string name="resync_file">ReSync file</string>
+<<<<<<< HEAD
+=======
+  <!--views-->
+  <string name="authentication_title">The Circle</string>
+  <string name="authentication_subtitle">Provide the following information:</string>
+  <string name="private_key_input_title">Private key:</string>
+  <string name="stream_uri_input_title">Stream Uri:</string>
+  <string name="user_name_input_title">Username:</string>
+  <string name="submit_form">Submit</string>
+  <string name="form_activity">Form Activity</string>
+  <string name="start_stream_activity">Start stream Activity</string>
+
+  <string name="live">Live</string>
+  <string name="stop_stream">Stop stream</string>
+  <string name="comment_placeholder">Comment</string>
+>>>>>>> origin/develop
   <!--menu-->
   <string name="microphone">Microphone</string>
   <string name="filters">Filters</string>

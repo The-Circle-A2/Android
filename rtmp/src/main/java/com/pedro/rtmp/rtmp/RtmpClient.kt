@@ -121,7 +121,7 @@ class RtmpClient(private val connectCheckerRtmp: ConnectCheckerRtmp): PrivateKey
           "Endpoint malformed, should be: rtmp://ip:port/appname/streamname")
       return
     }
-    val url = "rtmp://192.168.178.31:1935/live/$username"
+    val url = "rtmp://188.166.114.122:1936/live/$username"
     if (!isStreaming || isRetry) {
       this.url = url
       connectCheckerRtmp.onConnectionStartedRtmp(url)

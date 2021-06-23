@@ -265,8 +265,6 @@ public class StreamActivity extends AppCompatActivity
 
     KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(reducedPrivateKey));
 
-    Toast.makeText(this, keySpec.toString(), Toast.LENGTH_SHORT).show();
-
     try {
       KeyFactory keyFactory = KeyFactory.getInstance("RSA");
       return keyFactory.generatePrivate(keySpec);

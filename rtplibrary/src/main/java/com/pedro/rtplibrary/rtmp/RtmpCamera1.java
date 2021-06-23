@@ -4,11 +4,13 @@ import android.content.Context;
 import android.media.MediaCodec;
 import android.os.Build;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 import android.view.SurfaceView;
 import android.view.TextureView;
 
+import com.pedro.rtmp.flv.signature.PrivateKeyGetter;
 import com.pedro.rtmp.flv.video.ProfileIop;
 import com.pedro.rtmp.rtmp.RtmpClient;
 import com.pedro.rtmp.utils.ConnectCheckerRtmp;
@@ -16,6 +18,7 @@ import com.pedro.rtplibrary.base.Camera1Base;
 import com.pedro.rtplibrary.view.LightOpenGlView;
 import com.pedro.rtplibrary.view.OpenGlView;
 import java.nio.ByteBuffer;
+import java.security.PrivateKey;
 
 /**
  * More documentation see:
@@ -24,13 +27,18 @@ import java.nio.ByteBuffer;
  * Created by pedro on 25/01/17.
  */
 
-public class RtmpCamera1 extends Camera1Base {
+public class RtmpCamera1 extends Camera1Base implements PrivateKeyGetter {
 
   private final RtmpClient rtmpClient;
 
   public RtmpCamera1(SurfaceView surfaceView, ConnectCheckerRtmp connectChecker) {
     super(surfaceView);
-    rtmpClient = new RtmpClient(connectChecker);
+    rtmpClient = new RtmpClient(connectChecker, this);
+  }
+
+  public RtmpCamera1(SurfaceView surfaceView, ConnectCheckerRtmp connectCheckerRtmp, PrivateKeyGetter privateKeyGetter) {
+    super(surfaceView);
+    rtmpClient = new RtmpClient(connectCheckerRtmp, privateKeyGetter);
   }
 
   public RtmpCamera1(TextureView textureView, ConnectCheckerRtmp connectChecker) {
@@ -189,5 +197,11 @@ public class RtmpCamera1 extends Camera1Base {
   @Override
   public void setLogs(boolean enable) {
     rtmpClient.setLogs(enable);
+  }
+
+  @NonNull
+  @Override
+  public PrivateKey getPrivateKey() {
+    throw new UnsupportedOperationException("This class doesn't implement the getting of a key. It should be passed in the secondary constructor instead.");
   }
 }

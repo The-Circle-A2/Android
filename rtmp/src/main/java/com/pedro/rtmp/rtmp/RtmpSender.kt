@@ -31,13 +31,15 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     private var h264Packet = H264Packet(this)
     private var running = false
 
+    private val signatureSize: Int = 60
+
     @Volatile
     private var flvPacketBlockingQueue: BlockingQueue<FlvPacket> = LinkedBlockingQueue(60)
     @Volatile
-    private var videoSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(60)
+    private var videoSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(signatureSize * 3)
     @Volatile
-    private var audioSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(60)
-    private val signatureSize: Int = 5
+    private var audioSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(signatureSize * 3)
+
     private var streamThread: HandlerThread? = null
     private var signatureThread: HandlerThread? = null
     private var audioFramesSent: Long = 0
@@ -262,6 +264,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 backupList.add(packet)
                 byteArrayList.add(packet.buffer)
                 byteArrayList.add(packet.timeStamp.toBytes())
+                Log.e(SIG_TAG, "Timestamp bytes: ${packet.timeStamp.toBytes().toHexString()}")
             }
 
             try {
@@ -277,6 +280,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 val signature = signByteArray(byteArray)
                 val timestamps: List<Double> = backupList.map { it.timeStamp.toDouble() }
                 val signaturePacket = SignaturePacket(signature, timestamps, flvType)
+
                 Log.e(SIG_TAG, "Signature timestamps: $timestamps")
                 Log.e(SIG_TAG, "Signature Hash: ${MessageDigest.getInstance("SHA-256").digest(byteArray).toHexString()}")
                 Log.e(SIG_TAG, "Signature: ${signature.toHexString()}")

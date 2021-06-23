@@ -25,7 +25,6 @@ import com.pedro.rtpstreamer.MainActivity;
 import com.pedro.rtpstreamer.R;
 import com.pedro.rtpstreamer.utils.PathUtils;
 import com.pedro.tasks.GetItemAsyncTask;
-import com.pedro.tasks.SocketConnection;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -48,7 +47,7 @@ public class StreamActivity extends AppCompatActivity
   private RecyclerView.LayoutManager mLayoutManager;
   private String currentDateAndTime = "";
   private File folder;
-  private SocketConnection socket = new SocketConnection();
+//  private SocketConnection socket = new SocketConnection();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +73,7 @@ public class StreamActivity extends AppCompatActivity
     mLayoutManager = new LinearLayoutManager(this);
     //connect it to a layout manager
     mRecyclerView.setLayoutManager(mLayoutManager);
+
 
     //Init features array
     ArrayList<Message> mMessages = getMessages();
@@ -220,7 +220,9 @@ public class StreamActivity extends AppCompatActivity
 
   @Override
   public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
-    rtmpCamera1.startPreview();
+    if (!rtmpCamera1.isOnPreview()){
+      rtmpCamera1.startPreview();
+    }
   }
 
   @Override

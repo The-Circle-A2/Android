@@ -39,9 +39,9 @@ public class FormActivity extends AppCompatActivity
         setContentView(R.layout.activity_form);
 
         //Input fields
-        stream_uri_input = (EditText)findViewById(R.id.stream_uri_input);
-        user_name_input = (EditText)findViewById(R.id.user_name_input);
-        private_key_input = (EditText)findViewById(R.id.private_key_input);
+        stream_uri_input    = (EditText)findViewById(R.id.stream_uri_input);
+        user_name_input     = (EditText)findViewById(R.id.user_name_input);
+        private_key_input   = (EditText)findViewById(R.id.private_key_input);
 
         bSubmit = findViewById(R.id.submit_form);
         bSubmit.setOnClickListener(this);
@@ -51,11 +51,26 @@ public class FormActivity extends AppCompatActivity
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.submit_form:
-                SaveConnectionPrefs();
-                startActivity(new Intent(this, StreamActivity.class));
+                if(CheckPrefs()) {
+                    SaveConnectionPrefs();
+                    startActivity(new Intent(this, StreamActivity.class));
+                }
                 break;
             default:
                 break;
+        }
+    }
+
+    private Boolean CheckPrefs()
+    {
+        //TODO: verify if input is valid
+        if(!stream_uri_input.getText().toString().isEmpty() &&
+                !user_name_input.getText().toString().isEmpty() &&
+                !private_key_input.getText().toString().isEmpty()) {
+            Toast.makeText(this, "Not all fields are filled.", Toast.LENGTH_SHORT).show();
+            return true;
+        } else {
+            return false;
         }
     }
 

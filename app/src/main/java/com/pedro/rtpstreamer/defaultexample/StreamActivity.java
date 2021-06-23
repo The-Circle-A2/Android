@@ -1,6 +1,5 @@
 package com.pedro.rtpstreamer.defaultexample;
 
-import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
@@ -9,7 +8,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -27,11 +26,7 @@ import com.pedro.rtpstreamer.utils.PathUtils;
 import com.pedro.tasks.GetItemAsyncTask;
 
 import java.io.File;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -44,6 +39,7 @@ public class StreamActivity extends AppCompatActivity
 
   private RtmpCamera1 rtmpCamera1;
   private Button stopStreamButton;
+  private ImageButton imageButtonSend;
   private RecyclerView mRecyclerView;
   private RecyclerView.Adapter mAdapter;
   private RecyclerView.LayoutManager mLayoutManager;
@@ -59,6 +55,8 @@ public class StreamActivity extends AppCompatActivity
     SurfaceView surfaceView = findViewById(R.id.surfaceView);
     stopStreamButton = findViewById(R.id.b_start_stop);
     stopStreamButton.setOnClickListener(this);
+    imageButtonSend = findViewById(R.id.imageButtonSend);
+    imageButtonSend.setOnClickListener(this);
     rtmpCamera1 = new RtmpCamera1(surfaceView, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
@@ -198,6 +196,9 @@ public class StreamActivity extends AppCompatActivity
         } catch (CameraOpenException e) {
           Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
         }
+        break;
+      case R.id.imageButtonSend:
+
         break;
       default:
         break;

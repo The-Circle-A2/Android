@@ -128,7 +128,8 @@
           android:layout_height="wrap_content"
           android:layout_weight="1"
           android:background="@color/white"
-          app:srcCompat="@android:drawable/ic_menu_send" />
+          app:srcCompat="@android:drawable/ic_menu_send"
+          android:onClick="onClick"/>
 
     </LinearLayout>
 

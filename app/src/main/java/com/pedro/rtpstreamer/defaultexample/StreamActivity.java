@@ -189,7 +189,14 @@ public class StreamActivity extends AppCompatActivity
             if (rtmpCamera1.isRecording()
                     || rtmpCamera1.prepareAudio() && rtmpCamera1.prepareVideo()) {
               rtmpCamera1.stopPreview();
-              rtmpCamera1.startStream("rtmp://192.168.2.13:1935/live/69");
+
+              SharedPreferences prefs = getSharedPreferences(FormActivity.CONNECTION_PREFS, MODE_PRIVATE);
+              if(prefs.getString("USERNAME", null).isEmpty())
+              {
+                Toast.makeText(this, "Error preparing stream, This device cant do it", Toast.LENGTH_SHORT);
+                return;
+              }
+              rtmpCamera1.startStream(prefs.getString("USERNAME", null));
               stopStreamButton.setText(R.string.stop_button);
             } else {
               Toast.makeText(this, "Error preparing stream, This device cant do it",
@@ -243,19 +250,22 @@ public class StreamActivity extends AppCompatActivity
   @NotNull
   @Override
   public PrivateKey getPrivateKey() {
-    SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-    String privateKeyPKCS8 =  sharedPreferences.getString("PRIVATE_KEY", "");
-
-    Toast.makeText(this, "WOW", Toast.LENGTH_SHORT).show();
+    SharedPreferences sharedPreferences = getSharedPreferences(FormActivity.CONNECTION_PREFS, MODE_PRIVATE);
+    String privateKeyPKCS8 = sharedPreferences.getString("PRIVATE_KEY", null);
 
     if (privateKeyPKCS8.isEmpty()) {
       throw new IllegalStateException("PRIVATE_KEY can not be gotten when it's not stored. User shouldn't be in this screen yet!");
     }
 
     String reducedPrivateKey = privateKeyPKCS8
-            .replace("-----BEGIN PRIVATE KEY-----\n", "")
-            .replace("\n-----END PRIVATE KEY-----\n", "");
+            .replace("-----BEGIN PRIVATE KEY-----", "")
+            .replace("-----END PRIVATE KEY-----", "")
+            .replaceAll("\n", "")
+            .replaceAll("\\s+","");
+
     KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(reducedPrivateKey));
+
+    Toast.makeText(this, keySpec.toString(), Toast.LENGTH_SHORT).show();
 
     try {
       KeyFactory keyFactory = KeyFactory.getInstance("RSA");

@@ -39,7 +39,6 @@ public class FormActivity extends AppCompatActivity
         setContentView(R.layout.activity_form);
 
         //Input fields
-        stream_uri_input    = (EditText)findViewById(R.id.stream_uri_input);
         user_name_input     = (EditText)findViewById(R.id.user_name_input);
         private_key_input   = (EditText)findViewById(R.id.private_key_input);
 
@@ -64,9 +63,7 @@ public class FormActivity extends AppCompatActivity
     private Boolean CheckPrefs()
     {
         //TODO: verify if input is valid
-        if(stream_uri_input.getText().toString().isEmpty() ||
-                user_name_input.getText().toString().isEmpty() ||
-                private_key_input.getText().toString().isEmpty()) {
+        if(user_name_input.getText().toString().isEmpty() || private_key_input.getText().toString().isEmpty()) {
             Toast.makeText(this, "Not all fields are filled.", Toast.LENGTH_SHORT).show();
             return false;
         } else {
@@ -78,12 +75,8 @@ public class FormActivity extends AppCompatActivity
     {
         SharedPreferences.Editor editor = getSharedPreferences(CONNECTION_PREFS, MODE_PRIVATE).edit();
 
-        editor.putString("URI", stream_uri_input.getText().toString());
         editor.putString("USERNAME", user_name_input.getText().toString());
         editor.putString("PRIVATE_KEY", private_key_input.getText().toString());
         editor.apply();
-
-        SharedPreferences prefs = getSharedPreferences(CONNECTION_PREFS, MODE_PRIVATE);
-        //Toast.makeText(this, prefs.getString("user_name_input", "error"), Toast.LENGTH_SHORT).show();
     }
 }

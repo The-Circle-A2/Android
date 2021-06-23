@@ -8,6 +8,7 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -24,6 +25,7 @@ import com.pedro.rtpstreamer.MainActivity;
 import com.pedro.rtpstreamer.R;
 import com.pedro.rtpstreamer.utils.PathUtils;
 import com.pedro.tasks.GetItemAsyncTask;
+import com.pedro.tasks.SocketConnection;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -40,11 +42,13 @@ public class StreamActivity extends AppCompatActivity
   private RtmpCamera1 rtmpCamera1;
   private Button stopStreamButton;
   private ImageButton imageButtonSend;
+  private EditText editTextComment;
   private RecyclerView mRecyclerView;
   private RecyclerView.Adapter mAdapter;
   private RecyclerView.LayoutManager mLayoutManager;
   private String currentDateAndTime = "";
   private File folder;
+  private SocketConnection socket = new SocketConnection();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -60,7 +64,7 @@ public class StreamActivity extends AppCompatActivity
     rtmpCamera1 = new RtmpCamera1(surfaceView, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
-
+    editTextComment = findViewById(R.id.editTextComment);
     //obtain a handle to the object
     mRecyclerView = findViewById(R.id.recycler_view_activity_list);
     // use a linear layout manager
@@ -198,7 +202,9 @@ public class StreamActivity extends AppCompatActivity
         }
         break;
       case R.id.imageButtonSend:
-
+        String msg = String.valueOf(editTextComment.getText());
+//        socket.startConnection();
+//        socket.sendMessage(msg)
         break;
       default:
         break;

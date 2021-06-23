@@ -163,10 +163,10 @@ class CommandsManager {
 
   fun ByteArray.toHexString(): String = joinToString("") { java.lang.Byte.toUnsignedInt(it).toString(radix = 16).padStart(2, '0') }
 
-  fun sendSignature(signature: SignaturePacket, signatureType: FlvType, output: OutputStream): Int {
+  fun sendSignature(signature: SignaturePacket, output: OutputStream): Int {
     val name = "@setSignature"
     val signatureMessage = DataAmf0(name, getCurrentTimestamp(), streamId)
-    signatureMessage.addData(AmfString(signatureType.toString()))
+    signatureMessage.addData(AmfString(signature.type.toString()))
     signatureMessage.addData(AmfString(signature.signature.toHexString()))
     val timestamps = AmfStrictArray(signature.timestamps.map { AmfNumber(it) }.toMutableList())
     signatureMessage.addData(timestamps)

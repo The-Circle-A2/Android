@@ -70,7 +70,7 @@ public class StreamActivity extends AppCompatActivity
     SurfaceView surfaceView = findViewById(R.id.surfaceView);
     stopStreamButton = findViewById(R.id.b_start_stop);
     stopStreamButton.setOnClickListener(this);
-    rtmpCamera1 = new RtmpCamera1(surfaceView, this);
+    rtmpCamera1 = new RtmpCamera1(surfaceView, this, this);
     rtmpCamera1.setReTries(10);
     surfaceView.getHolder().addCallback(this);
 
@@ -245,6 +245,8 @@ public class StreamActivity extends AppCompatActivity
   public PrivateKey getPrivateKey() {
     SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
     String privateKeyPKCS8 =  sharedPreferences.getString("PRIVATE_KEY", "");
+
+    Toast.makeText(this, "WOW", Toast.LENGTH_SHORT).show();
 
     if (privateKeyPKCS8.isEmpty()) {
       throw new IllegalStateException("PRIVATE_KEY can not be gotten when it's not stored. User shouldn't be in this screen yet!");

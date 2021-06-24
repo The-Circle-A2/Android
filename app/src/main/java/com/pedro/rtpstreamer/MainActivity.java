@@ -3,6 +3,7 @@ package com.pedro.rtpstreamer;
 import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -54,7 +55,12 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_main);
-    startActivity(new Intent(this, FormActivity.class));
+
+    if (canTransitionToStream()) {
+      startActivity(new Intent(this, StreamActivity.class));
+    } else {
+      startActivity(new Intent(this, FormActivity.class));
+    }
     overridePendingTransition(R.transition.slide_in, R.transition.slide_out);
     TextView tvVersion = findViewById(R.id.tv_version);
     tvVersion.setText(getString(R.string.version, BuildConfig.VERSION_NAME));
@@ -155,5 +161,10 @@ public class MainActivity extends AppCompatActivity implements AdapterView.OnIte
       }
     }
     return true;
+  }
+
+  private boolean canTransitionToStream() {
+    SharedPreferences preferences = getSharedPreferences(FormActivity.CONNECTION_PREFS, MODE_PRIVATE);
+    return preferences.contains("PRIVATE_KEY") && preferences.contains("USERNAME");
   }
 }

@@ -1,17 +1,14 @@
 package com.pedro.rtpstreamer.defaultexample;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
-import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -32,17 +29,13 @@ import com.pedro.tasks.GetItemAsyncTask;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
-import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Date;
-import java.util.Locale;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -191,12 +184,13 @@ public class StreamActivity extends AppCompatActivity
               rtmpCamera1.stopPreview();
 
               SharedPreferences prefs = getSharedPreferences(FormActivity.CONNECTION_PREFS, MODE_PRIVATE);
-              if(prefs.getString("USERNAME", null).isEmpty())
+              String username = prefs.getString("USERNAME", null);
+              if(username == null || username.isEmpty())
               {
-                Toast.makeText(this, "Error preparing stream, This device cant do it", Toast.LENGTH_SHORT);
+                Toast.makeText(this, "Error preparing stream, This device cant do it", Toast.LENGTH_SHORT).show();
                 return;
               }
-              rtmpCamera1.startStream(prefs.getString("USERNAME", null));
+              rtmpCamera1.startStream(username);
               stopStreamButton.setText(R.string.stop_button);
             } else {
               Toast.makeText(this, "Error preparing stream, This device cant do it",

@@ -32,13 +32,17 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
     private var h264Packet = H264Packet(this)
     private var running = false
 
+    private val signatureSize: Int = 60
+
     @Volatile
     private var flvPacketBlockingQueue: BlockingQueue<FlvPacket> = LinkedBlockingQueue(60)
     @Volatile
-    private var videoSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(60)
+    private var videoSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(signatureSize * 3)
     @Volatile
-    private var audioSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(60)
-    private val signatureSize: Int = 5
+    private var audioSignatureBlockingDeque: BlockingDeque<FlvPacket> = LinkedBlockingDeque(signatureSize * 3)
+    @Volatile
+    private var signatureQueue: BlockingQueue<SignaturePacket> = LinkedBlockingQueue(5)
+
     private var streamThread: HandlerThread? = null
     private var signatureThread: HandlerThread? = null
     private var audioFramesSent: Long = 0
@@ -81,11 +85,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     override fun onVideoFrameCreated(flvPacket: FlvPacket) {
       try {
-        if (isFirstVideoPacket) {
-            isFirstAudioPacket = false
-        } else {
             flvPacketBlockingQueue.add(flvPacket)
-        }
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Video frame discarded")
         droppedVideoFrames++
@@ -94,11 +94,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     override fun onAudioFrameCreated(flvPacket: FlvPacket) {
       try {
-        if (isFirstAudioPacket) {
-            isFirstAudioPacket = false
-        } else {
             flvPacketBlockingQueue.add(flvPacket)
-        }
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Audio frame discarded")
         droppedAudioFrames++
@@ -133,9 +129,17 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 output?.let { output ->
                   size = commandsManager.sendAudioPacket(flvPacket, output)
                     if (flvPacket.type.equals(FlvType.AUDIO)) {
-                        audioSignatureBlockingDeque.addLast(flvPacket)
+                        if (isFirstAudioPacket) {
+                            isFirstAudioPacket = false
+                        } else {
+                            audioSignatureBlockingDeque.addLast(flvPacket)
+                        }
                     } else {
-                        videoSignatureBlockingDeque.addLast(flvPacket)
+                        if (isFirstVideoPacket) {
+                            isFirstVideoPacket = false
+                        } else {
+                            videoSignatureBlockingDeque.addLast(flvPacket)
+                        }
                     }
                   if (isEnableLogs) {
                     Log.i(TAG, "wrote Audio packet, size $size")
@@ -154,11 +158,8 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
             }
               // Part of the loop that does the signatures
               try {
-                  //Check for both video and audio
-                  checkAndMakeSignature(videoSignatureBlockingDeque, FlvType.VIDEO)
-                  checkAndMakeSignature(audioSignatureBlockingDeque, FlvType.AUDIO)
-
-                  //Check if there are enough audio packets for a signature
+                  //Check if any signatures can be send
+                  checkToSendSignature()
               } catch (e: Exception) {
                   //InterruptedException is only when you disconnect manually, you don't need report it.
                   if (e !is InterruptedException) {
@@ -169,6 +170,18 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
           }
         }
       }
+
+        signatureThread = HandlerThread("$TAG SignatureThread")
+        signatureThread?.start()
+        signatureThread?.let {
+            val h = Handler(it.looper)
+            h.post {
+                while (!Thread.interrupted()) {
+                    checkAndMakeSignature(audioSignatureBlockingDeque)
+                    checkAndMakeSignature(videoSignatureBlockingDeque)
+                }
+            }
+        }
     }
 
     fun stop(clear: Boolean = true) {
@@ -255,7 +268,26 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     // Function for checking if there are enough frames to make a signature
     // Makes a signature and puts it in a data message if possible
-    private fun checkAndMakeSignature(signatureBlockingDeque: BlockingDeque<FlvPacket>, flvType: FlvType) {
+    private fun checkToSendSignature() {
+        if (!signatureQueue.isEmpty()) {
+            val signaturePacket: SignaturePacket = signatureQueue.poll(10, TimeUnit.MILLISECONDS)
+
+            try {
+                var size = 0
+                output?.let { output ->
+                    size = commandsManager.sendSignature(signaturePacket, output)
+                    if (isEnableLogs) {
+                        Log.i(SIG_TAG, "wrote ${signaturePacket.type} signature packet, size $size")
+                    }
+                }
+                bitrateManager.calculateBitrate(size * 8L)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error Found: $e")
+            }
+        }
+    }
+
+    private fun checkAndMakeSignature(signatureBlockingDeque: BlockingDeque<FlvPacket>) {
         if (signatureBlockingDeque.size >= signatureSize) {
             val byteArrayList: MutableList<ByteArray> = LinkedList()
             val backupList: MutableList<FlvPacket> = LinkedList()
@@ -265,6 +297,8 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 byteArrayList.add(packet.buffer)
                 byteArrayList.add(packet.timeStamp.toBytes())
             }
+
+            val flvType = backupList.first().type
 
             try {
                 // If there somehow are not exactly 5 frames, put all of them back in the que (in the right order) and try again next loop
@@ -279,26 +313,13 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 val signature = signByteArray(byteArray)
                 val timestamps: List<Double> = backupList.map { it.timeStamp.toDouble() }
                 val signaturePacket = SignaturePacket(signature, timestamps, flvType)
-                Log.e(SIG_TAG, "Signature timestamps: $timestamps")
-                Log.e(SIG_TAG, "Signature Hash: ${MessageDigest.getInstance("SHA-256").digest(byteArray).toHexString()}")
-                Log.e(SIG_TAG, "Signature: ${signature.toHexString()}")
 
-//                val result = verifyByteArray(byteArray, signature)
-//                Log.e(SIG_TAG, "Verify: $result")
-
-                var size = 0
-                output?.let { output ->
-                    size = commandsManager.sendSignature(signaturePacket, flvType, output)
-                    if (isEnableLogs) {
-                        Log.i(SIG_TAG, "wrote $flvType signature packet, size $size")
-                    }
-                }
-                bitrateManager.calculateBitrate(size * 8L)
+                signatureQueue.offer(signaturePacket, 1, TimeUnit.SECONDS)
             } catch (e: Exception) {
                 Log.e(TAG, "Error Found: $e")
 
                 backupList.reverse()
-                backupList .forEach { signatureBlockingDeque.addFirst(it) }
+                backupList.forEach { signatureBlockingDeque.addFirst(it) }
             }
         }
     }

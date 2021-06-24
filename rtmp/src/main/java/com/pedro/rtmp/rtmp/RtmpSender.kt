@@ -82,11 +82,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     override fun onVideoFrameCreated(flvPacket: FlvPacket) {
       try {
-        if (isFirstVideoPacket) {
-            isFirstAudioPacket = false
-        } else {
             flvPacketBlockingQueue.add(flvPacket)
-        }
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Video frame discarded")
         droppedVideoFrames++
@@ -95,11 +91,7 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
 
     override fun onAudioFrameCreated(flvPacket: FlvPacket) {
       try {
-        if (isFirstAudioPacket) {
-            isFirstAudioPacket = false
-        } else {
             flvPacketBlockingQueue.add(flvPacket)
-        }
       } catch (e: IllegalStateException) {
         Log.i(TAG, "Audio frame discarded")
         droppedAudioFrames++
@@ -134,9 +126,17 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 output?.let { output ->
                   size = commandsManager.sendAudioPacket(flvPacket, output)
                     if (flvPacket.type.equals(FlvType.AUDIO)) {
-                        audioSignatureBlockingDeque.addLast(flvPacket)
+                        if (isFirstAudioPacket) {
+                            isFirstAudioPacket = false
+                        } else {
+                            audioSignatureBlockingDeque.addLast(flvPacket)
+                        }
                     } else {
-                        videoSignatureBlockingDeque.addLast(flvPacket)
+                        if (isFirstVideoPacket) {
+                            isFirstVideoPacket = false
+                        } else {
+                            videoSignatureBlockingDeque.addLast(flvPacket)
+                        }
                     }
                   if (isEnableLogs) {
                     Log.i(TAG, "wrote Audio packet, size $size")
@@ -293,7 +293,6 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 backupList.add(packet)
                 byteArrayList.add(packet.buffer)
                 byteArrayList.add(packet.timeStamp.toBytes())
-                Log.e(SIG_TAG, "Timestamp bytes: ${packet.timeStamp.toBytes().toHexString()}")
             }
 
             val flvType = backupList.first().type

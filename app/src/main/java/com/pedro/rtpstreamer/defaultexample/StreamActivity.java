@@ -270,7 +270,7 @@ public class StreamActivity extends AppCompatActivity
       return keyFactory.generatePrivate(keySpec);
     } catch (GeneralSecurityException e) {
       // TODO remove exception before done!
-      throw new RuntimeException("Something went wrong while parsing the user's private key!", e);
+      throw new RuntimeException("Something went wrong while parsing the user's private key!");
     }
   }
 }

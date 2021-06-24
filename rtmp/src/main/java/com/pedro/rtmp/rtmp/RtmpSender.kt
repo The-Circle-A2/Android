@@ -117,6 +117,11 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 videoFramesSent++
                 output?.let { output ->
                   size = commandsManager.sendVideoPacket(flvPacket, output)
+                    if (isFirstVideoPacket) {
+                        isFirstVideoPacket = false
+                    } else {
+                        videoSignatureBlockingDeque.addLast(flvPacket)
+                    }
                   if (isEnableLogs) {
                     Log.i(TAG, "wrote Video packet, size $size")
                   }
@@ -125,18 +130,10 @@ class RtmpSender(private val connectCheckerRtmp: ConnectCheckerRtmp, private val
                 audioFramesSent++
                 output?.let { output ->
                   size = commandsManager.sendAudioPacket(flvPacket, output)
-                    if (flvPacket.type.equals(FlvType.AUDIO)) {
-                        if (isFirstAudioPacket) {
-                            isFirstAudioPacket = false
-                        } else {
-                            audioSignatureBlockingDeque.addLast(flvPacket)
-                        }
+                    if (isFirstAudioPacket) {
+                        isFirstAudioPacket = false
                     } else {
-                        if (isFirstVideoPacket) {
-                            isFirstVideoPacket = false
-                        } else {
-                            videoSignatureBlockingDeque.addLast(flvPacket)
-                        }
+                        audioSignatureBlockingDeque.addLast(flvPacket)
                     }
                   if (isEnableLogs) {
                     Log.i(TAG, "wrote Audio packet, size $size")

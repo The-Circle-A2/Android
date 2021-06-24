@@ -25,11 +25,16 @@ import com.pedro.rtpstreamer.MainActivity;
 import com.pedro.rtpstreamer.R;
 import com.pedro.rtpstreamer.utils.PathUtils;
 import com.pedro.tasks.GetItemAsyncTask;
+import com.pedro.tasks.SocketConnection;
+import com.pedro.utils.SocketApplication;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutionException;
+
+import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 
 /**
  * More documentation see:
@@ -48,7 +53,8 @@ public class StreamActivity extends AppCompatActivity
   private RecyclerView.LayoutManager mLayoutManager;
   private String currentDateAndTime = "";
   private File folder;
-//  private SocketConnection socket = new SocketConnection();
+  private SocketConnection socket = new SocketConnection();
+  private Socket mSocket;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +62,11 @@ public class StreamActivity extends AppCompatActivity
     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
     setContentView(R.layout.activity_stream);
 
-    socket.startConnection();
+    SocketApplication app = new SocketApplication();
+    mSocket = app.getSocket();
+    mSocket.on(Socket.EVENT_CONNECT,onConnect);
+    mSocket.on(Socket.EVENT_CONNECT_ERROR, onConnectError);
+    mSocket.connect();
 
     folder = PathUtils.getRecordPath(this);
     SurfaceView surfaceView = findViewById(R.id.surfaceView);
@@ -244,4 +254,19 @@ public class StreamActivity extends AppCompatActivity
     }
     rtmpCamera1.stopPreview();
   }
+
+  private Emitter.Listener onConnect = new Emitter.Listener() {
+    @Override
+    public void call(Object... args) {
+      System.out.println("connected...");
+    }
+  };
+
+  private Emitter.Listener onConnectError = new Emitter.Listener() {
+    @Override
+    public void call(Object... args) {
+      System.out.println(args[0].toString());
+      System.out.println("Error connecting...");
+    }
+  };
 }
